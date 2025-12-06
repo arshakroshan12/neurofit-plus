@@ -1,0 +1,85 @@
+.questionnaire-container {
+  background: white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: 100%;
+}
+
+.questionnaire-container h2 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+  font-size: 2rem;
+}
+
+.subtitle {
+  color: #6b7280;
+  margin-bottom: 2rem;
+  font-size: 1rem;
+}
+
+.questionnaire-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.question-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.question-label {
+  font-weight: 500;
+  color: #374151;
+  font-size: 1rem;
+}
+
+.question-input {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.question-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.question-input.error {
+  border-color: #ef4444;
+}
+
+.error-message {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.submit-button {
+  margin-top: 1rem;
+  padding: 1rem 2rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: #5568d3;
+  transform: translateY(-1px);
+}
+
+.submit-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}

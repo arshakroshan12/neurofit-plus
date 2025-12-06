@@ -1,0 +1,35 @@
+# Python & env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+.venv/
+.venv-neurofit/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+
+# Data / models (do not commit large binaries)
+backend/models/*.pkl
+backend/models/*.joblib
+backend/models/*.model
+
+# Keep manifest and small metadata tracked
+# backend/models/model_manifest.json
+
+# Logs
+*.log

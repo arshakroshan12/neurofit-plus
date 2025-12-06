@@ -1,0 +1,6 @@
+sleep_hours,energy_level,stress_level,avg_key_latency_ms,total_duration_ms,backspace_rate,reaction_time_ms,reaction_attempted,label
+6.0,3.0,2.0,180.0,12000.0,0.05,420.0,1,0.0
+4.0,2.0,4.0,320.0,15000.0,0.18,820.0,1,1.0
+7.0,4.0,1.0,140.0,10000.0,0.02,340.0,1,0.0
+5.0,2.0,3.0,260.0,13000.0,0.12,610.0,1,1.0
+8.0,5.0,1.0,120.0,9000.0,0.01,300.0,1,0.0

@@ -1,0 +1,104 @@
+.typing-latency-container {
+  background: white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  width: 100%;
+}
+
+.typing-latency-container h2 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+  font-size: 2rem;
+}
+
+.start-button {
+  padding: 1rem 2rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 1rem;
+}
+
+.start-button:hover {
+  background: #5568d3;
+}
+
+.typing-test {
+  margin-top: 2rem;
+}
+
+.target-text {
+  font-size: 1.5rem;
+  line-height: 2;
+  font-family: 'Courier New', monospace;
+  padding: 1.5rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  min-height: 150px;
+  border: 2px solid #e5e7eb;
+}
+
+.target-text .correct {
+  color: #10b981;
+  background: #d1fae5;
+}
+
+.target-text .incorrect {
+  color: #ef4444;
+  background: #fee2e2;
+  text-decoration: underline;
+}
+
+.target-text .current {
+  background: #dbeafe;
+  border-left: 3px solid #667eea;
+}
+
+.target-text .pending {
+  color: #9ca3af;
+}
+
+.typing-input {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.2rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  transition: border-color 0.2s;
+}
+
+.typing-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.typing-input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.results {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border: 2px solid #10b981;
+  text-align: center;
+}
+
+.success-message {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #10b981;
+  margin-bottom: 0.5rem;
+}
+

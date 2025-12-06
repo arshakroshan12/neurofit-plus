@@ -1,0 +1,18 @@
+{
+  "model_version": "2025-12-06T16:32:55.484185Z",
+  "train_date": "2025-12-06T16:32:55.484401Z",
+  "dataset_hash": "3e636b4a4f1accce8d15b0729bae7bbce2b5a8ced527acef635c54f6cce26264",
+  "numpy_version": "1.26.4",
+  "sklearn_version": "1.4.2",
+  "feature_names": [
+    "sleep_hours",
+    "energy_level",
+    "stress_level",
+    "avg_key_latency_ms",
+    "total_duration_ms",
+    "backspace_rate",
+    "reaction_time_ms",
+    "reaction_attempted"
+  ],
+  "notes": "RandomForestClassifier trained on NeuroFit+ session data"
+}

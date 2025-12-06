@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+import json
+import argparse
+import pandas as pd
+
+
+def load_sessions(jsonl_path):
+    sessions = []
+    with open(jsonl_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                sessions.append(json.loads(line))
+            except:
+                print("Skipping invalid JSON:", line)
+    return sessions
+
+
+def flatten_session(session):
+    """Convert nested NeuroFit+ session into flat row (CSV-ready)."""
+
+    answers = session.get("answers", {})
+    if isinstance(answers, dict):
+        # dict style (sleep_hours: X)
+        sleep = answers.get("sleep_hours")
+        energy = answers.get("energy_level")
+        stress = answers.get("stress_level")
+    else:
+        # list style ([{question_id, value} ...])
+        sleep = next((a["value"] for a in answers if a["question_id"] == "sleep_hours"), None)
+        energy = next((a["value"] for a in answers if a["question_id"] == "energy_level"), None)
+        stress = next((a["value"] for a in answers if a["question_id"] == "stress_level"), None)
+
+    typing = session.get("typing_features", {})
+    task = session.get("task_performance", {})
+
+    # NOTE: label is optional (frontend doesn’t send it)
+    label = session.get("label")
+
+    return {
+        "sleep_hours": sleep,
+        "energy_level": energy,
+        "stress_level": stress,
+        "avg_key_latency_ms": typing.get("average_latency_ms") or typing.get("avg_key_latency_ms"),
+        "total_duration_ms": typing.get("total_duration_ms"),
+        "backspace_rate": typing.get("backspace_rate"),
+        "reaction_time_ms": task.get("reaction_time_ms"),
+        "reaction_attempted": task.get("reaction_attempted"),
+        "label": label
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Convert sessions.jsonl to features.csv")
+    parser.add_argument("--input", required=True)
+    parser.add_argument("--output", required=True)
+    args = parser.parse_args()
+
+    sessions = load_sessions(args.input)
+    rows = [flatten_session(s) for s in sessions]
+
+    df = pd.DataFrame(rows)
+    
+    # Fill missing values
+    df = df.fillna(0)
+
+    df.to_csv(args.output, index=False)
+    print(f"Wrote {len(df)} rows to {args.output}")
+
+
+if __name__ == "__main__":
+    main()
+

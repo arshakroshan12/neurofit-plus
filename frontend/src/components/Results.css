@@ -1,0 +1,108 @@
+.results-container {
+  background: white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  max-width: 700px;
+  width: 100%;
+}
+
+.results-container h2 {
+  margin: 0 0 2rem 0;
+  color: #1f2937;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.score-card {
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  color: white;
+}
+
+.score-value {
+  font-size: 4rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.score-label {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin-bottom: 1rem;
+}
+
+.risk-badge {
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+}
+
+.recommendations-section {
+  margin-bottom: 2rem;
+}
+
+.recommendations-section h3 {
+  color: #1f2937;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.recommendations-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recommendations-list li {
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  background: #f9fafb;
+  border-left: 4px solid #667eea;
+  border-radius: 6px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.timestamp {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.timestamp p {
+  margin: 0.25rem 0;
+}
+
+.model-info {
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.reset-button {
+  width: 100%;
+  padding: 1rem 2rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.reset-button:hover {
+  background: #5568d3;
+  transform: translateY(-1px);
+}
+
