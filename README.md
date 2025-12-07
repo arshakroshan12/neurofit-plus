@@ -172,3 +172,5 @@ This project is under the MIT License. See `LICENSE`.
 GitHub: [https://github.com/arshakroshan12](https://github.com/arshakroshan12)
 
 
+
+[![API Docs](https://img.shields.io/badge/docs-Redoc-blue)](https://arshakroshan12.github.io/neurofit-plus/)
