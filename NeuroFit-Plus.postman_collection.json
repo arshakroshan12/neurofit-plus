@@ -1,0 +1,198 @@
+{
+	"info": {
+		"_postman_id": "neurofit-plus-api",
+		"name": "NeuroFit+ API",
+		"description": "Complete API collection for NeuroFit+ fatigue prediction service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health & Status",
+			"item": [
+				{
+					"name": "Root Endpoint",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": ["{{base_url}}"],
+							"path": [""]
+						},
+						"description": "Get API information and available endpoints"
+					}
+				},
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						},
+						"description": "Check API health and model load status"
+					}
+				}
+			]
+		},
+		{
+			"name": "Model Information",
+			"item": [
+				{
+					"name": "Get Model Features",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/model/features",
+							"host": ["{{base_url}}"],
+							"path": ["model", "features"]
+						},
+						"description": "Get information about model features and expected feature count"
+					}
+				},
+				{
+					"name": "Get Model Manifest",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/model/manifest",
+							"host": ["{{base_url}}"],
+							"path": ["model", "manifest"]
+						},
+						"description": "Get the model manifest with training metadata"
+					}
+				}
+			]
+		},
+		{
+			"name": "Predictions",
+			"item": [
+				{
+					"name": "Predict Fatigue (List Answers)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"timestamp\": \"2024-01-15T10:30:00\",\n  \"answers\": [\n    {\"question_id\": \"sleep_hours\", \"value\": 7.0},\n    {\"question_id\": \"energy_level\", \"value\": 3.0},\n    {\"question_id\": \"stress_level\", \"value\": 2.0}\n  ],\n  \"typing_features\": {\n    \"average_latency_ms\": 120.0,\n    \"total_duration_ms\": 5000.0,\n    \"backspace_rate\": 0.03\n  },\n  \"task_performance\": {\n    \"reaction_time_ms\": 350.0,\n    \"reaction_attempted\": true\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/predict_fatigue",
+							"host": ["{{base_url}}"],
+							"path": ["predict_fatigue"]
+						},
+						"description": "Predict fatigue level using list format for answers"
+					}
+				},
+				{
+					"name": "Predict Fatigue (Dict Answers)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"timestamp\": \"2024-01-15T10:30:00\",\n  \"answers\": {\n    \"sleep_hours\": 6.0,\n    \"energy_level\": 4.0,\n    \"stress_level\": 1.0\n  },\n  \"typing_features\": {\n    \"average_latency_ms\": 150.0,\n    \"total_duration_ms\": 6000.0,\n    \"backspace_rate\": 0.05\n  },\n  \"task_performance\": {\n    \"reaction_time_ms\": 300.0,\n    \"reaction_attempted\": true\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/predict_fatigue",
+							"host": ["{{base_url}}"],
+							"path": ["predict_fatigue"]
+						},
+						"description": "Predict fatigue level using dict format for answers"
+					}
+				},
+				{
+					"name": "Predict Fatigue (Minimal)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"timestamp\": \"2024-01-15T10:30:00\",\n  \"answers\": {}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/predict_fatigue",
+							"host": ["{{base_url}}"],
+							"path": ["predict_fatigue"]
+						},
+						"description": "Predict fatigue with minimal/default values"
+					}
+				}
+			]
+		},
+		{
+			"name": "Session Management",
+			"item": [
+				{
+					"name": "Save Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"user123\",\n  \"timestamp\": \"2024-01-15T10:30:00\",\n  \"answers\": [\n    {\"question_id\": \"sleep_hours\", \"value\": 7.5},\n    {\"question_id\": \"energy_level\", \"value\": 6.0},\n    {\"question_id\": \"stress_level\", \"value\": 3.0}\n  ],\n  \"typing_features\": {\n    \"average_latency_ms\": 150.5,\n    \"total_duration_ms\": 5000.0,\n    \"backspace_rate\": 0.05\n  },\n  \"task_performance\": {\n    \"reaction_time_ms\": 250.0,\n    \"reaction_attempted\": true\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/save_session",
+							"host": ["{{base_url}}"],
+							"path": ["save_session"]
+						},
+						"description": "Save session data to JSONL file for later training"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		}
+	]
+}
+
