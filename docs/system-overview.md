@@ -40,3 +40,5 @@ uvicorn backend.app.main:app --reload --port 8000
 
 * CI ensures model integrity before allowing deployment.
 
+Public API docs: https://arshakroshan12.github.io/neurofit-plus/ (generated from OpenAPI on each push)
+
