@@ -12,6 +12,7 @@ from typing import Optional, List, Dict, Any, Union
 import joblib
 import numpy as np
 import sklearn
+import requests
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
@@ -104,6 +105,50 @@ for model_dir in {path.parent for path in MODEL_SEARCH_PATHS}:
 
 MODEL_FILE = next((path for path in MODEL_SEARCH_PATHS if path.exists()), None)
 MANIFEST_FILE = next((path for path in MANIFEST_SEARCH_PATHS if path.exists()), None)
+
+# --- START: download model on startup if missing ---
+MODEL_PATH = os.environ.get("NEUROFIT_MODEL_PATH", "backend/models/fatigue_model.pkl")
+MODEL_URL = os.environ.get("MODEL_URL")
+MODEL_AUTH_HEADER = os.environ.get("MODEL_AUTH_HEADER")  # optional token for private URLs
+
+def _download_model_if_missing():
+    """
+    Downloads the model from MODEL_URL if:
+    - MODEL_URL is set
+    - MODEL_PATH does not already exist
+    """
+    try:
+        if os.path.exists(MODEL_PATH):
+            print(f"[neurofit] Model already exists at {MODEL_PATH}")
+            return
+
+        if not MODEL_URL:
+            print("[neurofit] MODEL_URL not set; cannot download model. Continuing...")
+            return
+
+        os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+        print(f"[neurofit] Downloading model from {MODEL_URL} -> {MODEL_PATH}")
+
+        headers = {}
+        if MODEL_AUTH_HEADER:
+            headers["Authorization"] = MODEL_AUTH_HEADER
+
+        resp = requests.get(MODEL_URL, stream=True, headers=headers, timeout=60)
+        resp.raise_for_status()
+
+        with open(MODEL_PATH, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+
+        print("[neurofit] Model download complete.")
+    except Exception as e:
+        print(f"[neurofit] ERROR: Failed to download model: {e}")
+        raise
+
+# Trigger model download BEFORE model load occurs
+_download_model_if_missing()
+# --- END: download model on startup ---
 
 # Global state
 _fatigue_model = None
