@@ -1,0 +1,15 @@
+version: "3.8"
+services:
+  neurofit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: neurofit-plus:local
+    ports:
+      - "8000:8000"
+    environment:
+      - NEUROFIT_MODEL_PATH=/app/backend/models/fatigue_model.pkl
+      - NEUROFIT_MANIFEST_PATH=/app/backend/models/model_manifest.json
+    volumes:
+      - ./backend/models:/app/backend/models:rw
+    restart: unless-stopped
