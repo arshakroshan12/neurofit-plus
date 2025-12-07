@@ -1,0 +1,351 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NeuroFit+ API",
+    "description": "Fatigue prediction API for NeuroFit+",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "Root endpoint",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Health check endpoint",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/model/features": {
+      "get": {
+        "summary": "Model Features",
+        "description": "Get information about model features",
+        "operationId": "model_features_model_features_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/model/manifest": {
+      "get": {
+        "summary": "Model Manifest",
+        "description": "Get the model manifest JSON",
+        "operationId": "model_manifest_model_manifest_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict_fatigue": {
+      "post": {
+        "summary": "Predict Fatigue",
+        "description": "Predict fatigue level based on session data.\nUses ML model if available, otherwise falls back to heuristic scoring.",
+        "operationId": "predict_fatigue_predict_fatigue_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionData"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FatiguePredictionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/save_session": {
+      "post": {
+        "summary": "Save Session",
+        "description": "Save session data to JSONL file.",
+        "operationId": "save_session_save_session_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionData"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnswerItem": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "value"
+        ],
+        "title": "AnswerItem"
+      },
+      "FatiguePredictionResponse": {
+        "properties": {
+          "fatigue_score": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Fatigue Score",
+            "description": "Fatigue score (0-100)"
+          },
+          "risk_level": {
+            "type": "string",
+            "title": "Risk Level",
+            "description": "Risk level: low, medium, or high"
+          },
+          "recommendations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommendations",
+            "description": "Personalized recommendations"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp",
+            "description": "Prediction timestamp"
+          },
+          "model_used": {
+            "type": "string",
+            "title": "Model Used",
+            "description": "Model type used: 'ml_model' or 'heuristic'"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fatigue_score",
+          "risk_level",
+          "recommendations",
+          "timestamp",
+          "model_used"
+        ],
+        "title": "FatiguePredictionResponse",
+        "description": "Response model for fatigue prediction"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "SessionData": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp",
+            "description": "ISO timestamp"
+          },
+          "answers": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AnswerItem"
+                },
+                "type": "array"
+              },
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              }
+            ],
+            "title": "Answers",
+            "description": "Answers as list or dict"
+          },
+          "typing_features": {
+            "$ref": "#/components/schemas/TypingFeatures"
+          },
+          "task_performance": {
+            "$ref": "#/components/schemas/TaskPerformance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp",
+          "answers"
+        ],
+        "title": "SessionData",
+        "description": "Flexible session schema: accepts either list or dict for answers"
+      },
+      "TaskPerformance": {
+        "properties": {
+          "reaction_time_ms": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Reaction Time Ms",
+            "default": 0.0
+          },
+          "reaction_attempted": {
+            "type": "boolean",
+            "title": "Reaction Attempted",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "TaskPerformance"
+      },
+      "TypingFeatures": {
+        "properties": {
+          "average_latency_ms": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Average Latency Ms",
+            "default": 0.0
+          },
+          "total_duration_ms": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Total Duration Ms",
+            "default": 0.0
+          },
+          "backspace_rate": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Backspace Rate",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "title": "TypingFeatures"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
