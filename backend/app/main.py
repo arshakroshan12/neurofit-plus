@@ -26,7 +26,7 @@ from pathlib import Path as _P
 # Prefer env var, else use the backend-owned folder
 _ENV_PATH = os.environ.get("NEUROFIT_MODEL_PATH", "/app/backend/models/fatigue_model.pkl")
 
-# if older code attempted to create /app/models (permission issue), prefer backend path
+# if older code attempted to create /app/backend/models (permission issue), prefer backend path
 # set a module-level alias the rest of the file can use (MODEL_PATH)
 MODEL_PATH = _ENV_PATH
 _MODEL_DIR = _P(MODEL_PATH).parent
