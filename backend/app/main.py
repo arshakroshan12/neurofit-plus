@@ -20,6 +20,28 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
 
+# --- START: runtime-safe model path fallback (added) ---
+from pathlib import Path as _P
+
+# Prefer env var, else use the backend-owned folder
+_ENV_PATH = os.environ.get("NEUROFIT_MODEL_PATH", "/app/backend/models/fatigue_model.pkl")
+
+# if older code attempted to create /app/models (permission issue), prefer backend path
+# set a module-level alias the rest of the file can use (MODEL_PATH)
+MODEL_PATH = _ENV_PATH
+_MODEL_DIR = _P(MODEL_PATH).parent
+
+try:
+    _MODEL_DIR.mkdir(parents=True, exist_ok=True)
+except PermissionError:
+    # fallback to /app/backend/models which should be writable in image
+    MODEL_PATH = "/app/backend/models/fatigue_model.pkl"
+    _MODEL_DIR = _P(MODEL_PATH).parent
+    _MODEL_DIR.mkdir(parents=True, exist_ok=True)
+
+print(f"[neurofit] Using MODEL_PATH={MODEL_PATH}")
+# --- END: runtime-safe model path fallback ---
+
 # ----------------------------
 # Models / Schemas
 # ----------------------------
@@ -107,7 +129,6 @@ MODEL_FILE = next((path for path in MODEL_SEARCH_PATHS if path.exists()), None)
 MANIFEST_FILE = next((path for path in MANIFEST_SEARCH_PATHS if path.exists()), None)
 
 # --- START: download model on startup if missing ---
-MODEL_PATH = os.environ.get("NEUROFIT_MODEL_PATH", "backend/models/fatigue_model.pkl")
 MODEL_URL = os.environ.get("MODEL_URL")
 MODEL_AUTH_HEADER = os.environ.get("MODEL_AUTH_HEADER")  # optional token for private URLs
 
