@@ -112,11 +112,11 @@ app.add_middleware(
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # repo-root
 DATA_DIR = BASE_DIR / "data"
 MODEL_SEARCH_PATHS = [
-    BASE_DIR / "models" / "fatigue_model.pkl",
+    BASE_DIR / "backend" / "models" / "fatigue_model.pkl",
     BASE_DIR / "backend" / "models" / "fatigue_model.pkl",
 ]
 MANIFEST_SEARCH_PATHS = [
-    BASE_DIR / "models" / "model_manifest.json",
+    BASE_DIR / "backend" / "models" / "model_manifest.json",
     BASE_DIR / "backend" / "models" / "model_manifest.json",
 ]
 SESSIONS_FILE = DATA_DIR / "sessions.jsonl"
