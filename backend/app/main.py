@@ -169,6 +169,8 @@ def _download_model_if_missing():
 
 # Trigger model download BEFORE model load occurs
 _download_model_if_missing()
+MODEL_FILE = next((path for path in MODEL_SEARCH_PATHS if path.exists()), None)
+MANIFEST_FILE = next((path for path in MANIFEST_SEARCH_PATHS if path.exists()), None)
 # --- END: download model on startup ---
 
 # Global state
