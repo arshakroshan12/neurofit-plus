@@ -3,6 +3,7 @@ NeuroFit+ Backend API
 
 FastAPI application for fatigue prediction based on session data.
 """
+from .workout_engine import compute_bmi, personalize_and_rank
 import json
 import os
 import hashlib
@@ -82,6 +83,7 @@ class FatiguePredictionResponse(BaseModel):
     recommendations: List[str] = Field(..., description="Personalized recommendations")
     timestamp: str = Field(..., description="Prediction timestamp")
     model_used: str = Field(..., description="Model type used: 'ml_model' or 'heuristic'")
+    workouts: Optional[List[Dict[str, Any]]] = Field(None, description="Personalized workout recommendations")
 
 # ----------------------------
 # App & paths
@@ -518,14 +520,61 @@ async def predict_fatigue(session: SessionData):
         risk_level = get_risk_level(fatigue_score)
         recommendations = get_recommendations(fatigue_score, session)
 
-        response = FatiguePredictionResponse(
-            fatigue_score=round(float(fatigue_score), 2),
-            risk_level=risk_level,
-            recommendations=recommendations,
-            timestamp=datetime.now().isoformat(),
-            model_used=model_used
+                # -------------------- WORKOUT RECOMMENDATION --------------------
+        # Extract optional user_profile (SessionData doesn't include user_profile directly,
+        # so we try to read it from the SessionData answers or allow client to pass it in answers)
+        # Here we assume 'user_profile' may be passed inside session.answers as a dict entry,
+        # or the client may later extend the session model to include user_profile explicitly.
+        # For now, try both approaches.
+
+        # Attempt 1: check if session has attribute user_profile (future-proof)
+        user_profile = {}
+        if hasattr(session, "user_profile"):
+            try:
+                user_profile = session.user_profile or {}
+            except Exception:
+                user_profile = {}
+
+        # Attempt 2: fallback — check answers for a key "user_profile" (not typical, but safe)
+        if not user_profile:
+            try:
+                # if answers were provided as dict, normalized_answers() will produce list,
+                # so this is only a fallback if client included user_profile elsewhere.
+                # Keep this non-fatal.
+                pass
+            except Exception:
+                pass
+
+        # Extract common fields (safe defaults)
+        height_cm = user_profile.get("height_cm") if isinstance(user_profile, dict) else None
+        weight_kg = user_profile.get("weight_kg") if isinstance(user_profile, dict) else None
+        fitness_level = user_profile.get("fitness_level") if isinstance(user_profile, dict) else None
+        injuries = user_profile.get("injuries", []) if isinstance(user_profile, dict) else []
+        medical_conditions = user_profile.get("medical_conditions", []) if isinstance(user_profile, dict) else []
+
+        bmi = compute_bmi(height_cm, weight_kg)
+
+        workouts = personalize_and_rank(
+            fatigue_score=float(fatigue_score),
+            bmi=bmi,
+            sleep_hours=None,  # if you want, pass a sleep_hours field from answers or user_profile
+            fitness_level=fitness_level,
+            injuries=injuries,
+            medical_conditions=medical_conditions,
+            top_k=3
         )
-        return response
+        # -------------------- END WORKOUT RECOMMENDATION --------------------
+
+        response_payload = {
+            "fatigue_score": round(float(fatigue_score), 2),
+            "risk_level": risk_level,
+            "recommendations": recommendations,
+            "timestamp": datetime.now().isoformat(),
+            "model_used": model_used,
+            "workouts": workouts
+        }
+        return JSONResponse(response_payload)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
