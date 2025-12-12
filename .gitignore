@@ -33,3 +33,4 @@ backend/models/*.model
 
 # Logs
 *.log
+backend/models/*.joblib # if not already ignored
