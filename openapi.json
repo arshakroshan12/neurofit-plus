@@ -1,15 +1,13 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "NeuroFit+ API",
-    "description": "Fatigue prediction API for NeuroFit+",
-    "version": "1.0.0"
+    "title": "NeuroFit+ Test App",
+    "version": "0.1.0"
   },
   "paths": {
     "/": {
       "get": {
         "summary": "Root",
-        "description": "Root endpoint",
         "operationId": "root__get",
         "responses": {
           "200": {
@@ -25,9 +23,8 @@
     },
     "/health": {
       "get": {
-        "summary": "Health Check",
-        "description": "Health check endpoint",
-        "operationId": "health_check_health_get",
+        "summary": "Health",
+        "operationId": "health_health_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -43,25 +40,7 @@
     "/model/features": {
       "get": {
         "summary": "Model Features",
-        "description": "Get information about model features",
         "operationId": "model_features_model_features_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/model/manifest": {
-      "get": {
-        "summary": "Model Manifest",
-        "description": "Get the model manifest JSON",
-        "operationId": "model_manifest_model_manifest_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -77,52 +56,12 @@
     "/predict_fatigue": {
       "post": {
         "summary": "Predict Fatigue",
-        "description": "Predict fatigue level based on session data.\nUses ML model if available, otherwise falls back to heuristic scoring.",
         "operationId": "predict_fatigue_predict_fatigue_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SessionData"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FatiguePredictionResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/save_session": {
-      "post": {
-        "summary": "Save Session",
-        "description": "Save session data to JSONL file.",
-        "operationId": "save_session_save_session_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SessionData"
+                "$ref": "#/components/schemas/PredictRequest"
               }
             }
           },
@@ -153,7 +92,7 @@
   },
   "components": {
     "schemas": {
-      "AnswerItem": {
+      "AnswerModel": {
         "properties": {
           "question_id": {
             "type": "string",
@@ -169,51 +108,7 @@
           "question_id",
           "value"
         ],
-        "title": "AnswerItem"
-      },
-      "FatiguePredictionResponse": {
-        "properties": {
-          "fatigue_score": {
-            "type": "number",
-            "maximum": 100.0,
-            "minimum": 0.0,
-            "title": "Fatigue Score",
-            "description": "Fatigue score (0-100)"
-          },
-          "risk_level": {
-            "type": "string",
-            "title": "Risk Level",
-            "description": "Risk level: low, medium, or high"
-          },
-          "recommendations": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Recommendations",
-            "description": "Personalized recommendations"
-          },
-          "timestamp": {
-            "type": "string",
-            "title": "Timestamp",
-            "description": "Prediction timestamp"
-          },
-          "model_used": {
-            "type": "string",
-            "title": "Model Used",
-            "description": "Model type used: 'ml_model' or 'heuristic'"
-          }
-        },
-        "type": "object",
-        "required": [
-          "fatigue_score",
-          "risk_level",
-          "recommendations",
-          "timestamp",
-          "model_used"
-        ],
-        "title": "FatiguePredictionResponse",
-        "description": "Response model for fatigue prediction"
+        "title": "AnswerModel"
       },
       "HTTPValidationError": {
         "properties": {
@@ -228,22 +123,17 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "SessionData": {
+      "PredictRequest": {
         "properties": {
-          "user_id": {
-            "type": "string",
-            "title": "User Id"
-          },
           "timestamp": {
             "type": "string",
-            "title": "Timestamp",
-            "description": "ISO timestamp"
+            "title": "Timestamp"
           },
           "answers": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/AnswerItem"
+                  "$ref": "#/components/schemas/AnswerModel"
                 },
                 "type": "array"
               },
@@ -254,31 +144,29 @@
                 "type": "object"
               }
             ],
-            "title": "Answers",
-            "description": "Answers as list or dict"
+            "title": "Answers"
           },
           "typing_features": {
-            "$ref": "#/components/schemas/TypingFeatures"
+            "$ref": "#/components/schemas/TypingModel"
           },
           "task_performance": {
-            "$ref": "#/components/schemas/TaskPerformance"
+            "$ref": "#/components/schemas/TaskPerfModel"
           }
         },
         "type": "object",
         "required": [
           "timestamp",
-          "answers"
+          "answers",
+          "typing_features",
+          "task_performance"
         ],
-        "title": "SessionData",
-        "description": "Flexible session schema: accepts either list or dict for answers"
+        "title": "PredictRequest"
       },
-      "TaskPerformance": {
+      "TaskPerfModel": {
         "properties": {
           "reaction_time_ms": {
             "type": "number",
-            "minimum": 0.0,
-            "title": "Reaction Time Ms",
-            "default": 0.0
+            "title": "Reaction Time Ms"
           },
           "reaction_attempted": {
             "type": "boolean",
@@ -287,31 +175,28 @@
           }
         },
         "type": "object",
-        "title": "TaskPerformance"
+        "title": "TaskPerfModel"
       },
-      "TypingFeatures": {
+      "TypingModel": {
         "properties": {
           "average_latency_ms": {
             "type": "number",
-            "minimum": 0.0,
             "title": "Average Latency Ms",
             "default": 0.0
           },
           "total_duration_ms": {
             "type": "number",
-            "minimum": 0.0,
             "title": "Total Duration Ms",
             "default": 0.0
           },
           "backspace_rate": {
             "type": "number",
-            "minimum": 0.0,
             "title": "Backspace Rate",
             "default": 0.0
           }
         },
         "type": "object",
-        "title": "TypingFeatures"
+        "title": "TypingModel"
       },
       "ValidationError": {
         "properties": {
