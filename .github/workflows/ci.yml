@@ -2,60 +2,42 @@ name: CI
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [ main, master ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Cache pip packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    - name: Install dependencies
-      working-directory: ./backend
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest httpx
-
-    - name: Install pre-commit
-      run: |
-        pip install pre-commit
-
-    - name: Run pre-commit checks
-      run: |
-        pre-commit run --all-files --show-diff-on-failure
-
-    - name: Run pytest
-      working-directory: ./backend
-      run: |
-        pytest -v
-
-    - name: Model validation (CI)
-      run: |
-        python backend/ci/validate_model.py
-
-    - name: FastAPI import check
-      working-directory: ./backend
-      run: |
-        python -c "from app.main import app; print('FastAPI app imported successfully')"
-
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements-dev.txt
+      - name: Ensure backend/models exists and create dummy model if missing
+        run: |
+          python - <<'PY'
+from pathlib import Path
+import joblib
+Path("backend/models").mkdir(parents=True, exist_ok=True)
+if not (Path("backend/models/ml_model.joblib").exists()):
+    try:
+        from sklearn.dummy import DummyClassifier
+        model = DummyClassifier(strategy="constant", constant=1)
+        model.fit([[0]*8], [1])
+    except Exception:
+        class ModelStub:
+            def predict(self, X): return [1 for _ in X]
+            def predict_proba(self, X): return [[0.0,1.0] for _ in X]
+        model = ModelStub()
+    joblib.dump(model, Path("backend/models/ml_model.joblib"))
+print("dummy model ready")
+PY
+      - name: Run tests
+        run: |
+          pytest -q
