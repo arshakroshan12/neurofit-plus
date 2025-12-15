@@ -1,0 +1,7 @@
+{
+  "trained_from": "predictions.log",
+  "samples": 21,
+  "mse": 0.0018913523158631883,
+  "r2": 0.7291208342968771,
+  "model_type": "GradientBoostingRegressor"
+}
