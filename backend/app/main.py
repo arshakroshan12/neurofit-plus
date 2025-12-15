@@ -1,103 +1,59 @@
 from __future__ import annotations
-import os
-import tempfile
+
 import logging
+import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 from dataclasses import dataclass, field
 
+import numpy as np
 from fastapi import FastAPI
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.staticfiles import StaticFiles
 
-# --- prediction logging setup ---
-import json
-from datetime import datetime
+# ============================================================
+# Logging (stdout only — Render safe)
+# ============================================================
 
-LOG_DIR = Path(__file__).resolve().parent.parent / "data"
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-PRED_LOG_FILE = LOG_DIR / "predictions.log"
+logger = logging.getLogger("neurofit")
+logging.basicConfig(level=logging.INFO)
 
 def log_prediction(payload: dict):
     """
-    Append one JSON line to predictions.log.
-    Never raises — logging must not break API.
+    Log one prediction as JSON to stdout.
+    Render captures this automatically.
     """
     try:
-        with open(PRED_LOG_FILE, "a") as f:
-            f.write(json.dumps(payload) + "\n")
+        logger.info(json.dumps(payload))
     except Exception:
-        # swallow logging errors silently
         pass
-# --- end logging setup ---
 
 
-# --- robust safe model dir (import-safe, reloader-safe) ---
-def _is_writable_dir(p: Path) -> bool:
-    """Return True if path exists and is writable, or parent is writable."""
-    try:
-        if p.exists() and p.is_dir() and os.access(str(p), os.W_OK):
-            return True
-        parent = p.parent
-        if parent.exists() and os.access(str(parent), os.W_OK):
-            return True
-    except Exception:
-        return False
-    return False
+# ============================================================
+# Model loading (bundled, read-only)
+# ============================================================
 
-_env_dir = os.environ.get("NEUROFIT_MODEL_DIR")
-if _env_dir:
-    _MODEL_DIR = Path(_env_dir)
-else:
-    try:
-        repo_models = Path(__file__).resolve().parent.parent / "models"
-    except Exception:
-        repo_models = Path.cwd() / "backend" / "models"
-    # only use repo_models if it already exists and is writable
-    if repo_models.exists() and _is_writable_dir(repo_models):
-        _MODEL_DIR = repo_models
-    else:
-        # fallback to system temp (always writable)
-        _MODEL_DIR = Path(tempfile.gettempdir()) / "neurofit_models"
+MODEL_VERSION = "v1.0-synthetic"
 
-# Try to create the model dir but never raise — if creation fails, fall back to tempdir
-try:
-    _MODEL_DIR.mkdir(parents=True, exist_ok=True)
-except PermissionError:
-    logging.getLogger("neurofit").warning(
-        "Permission denied creating %s — falling back to tempdir", _MODEL_DIR
-    )
-    _MODEL_DIR = Path(tempfile.gettempdir()) / "neurofit_models"
-    try:
-        _MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        logging.getLogger("neurofit").error(
-            "Could not create fallback model dir %s", _MODEL_DIR
-        )
-except Exception:
-    logging.getLogger("neurofit").warning(
-        "Could not create model dir %s (readonly?), using fallback", _MODEL_DIR
-    )
-    _MODEL_DIR = Path(tempfile.gettempdir()) / "neurofit_models"
-    try:
-        _MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        logging.getLogger("neurofit").error(
-            "Could not create fallback model dir %s", _MODEL_DIR
-        )
-# --- end robust safe model dir ---
+MODEL_DIR = Path(__file__).resolve().parent.parent / "models"
+MODEL_FILE = MODEL_DIR / "ml_model.joblib"
 
-# try to load ML model if present
 _ml_model = None
-_MODEL_FILE = _MODEL_DIR / "ml_model.joblib"
 try:
-    if _MODEL_FILE.exists():
+    if MODEL_FILE.exists():
         import joblib
-        _ml_model = joblib.load(_MODEL_FILE)
-except Exception:
-    _ml_model = None
+        _ml_model = joblib.load(MODEL_FILE)
+except Exception as e:
+    logger.warning("Could not load ML model: %s", e)
 
-# feature order (must match train)
-_FEATURE_ORDER = [
+
+# ============================================================
+# Feature order (MUST match training)
+# ============================================================
+
+FEATURE_ORDER = [
     "sleep_hours",
     "energy_level",
     "stress_level",
@@ -108,7 +64,11 @@ _FEATURE_ORDER = [
     "reaction_attempted",
 ]
 
-# Minimal feature extractor utility
+
+# ============================================================
+# Data structures
+# ============================================================
+
 @dataclass
 class TypingFeatures:
     average_latency_ms: float = 0.0
@@ -127,14 +87,16 @@ class SessionData:
     typing_features: TypingFeatures = field(default_factory=TypingFeatures)
     task_performance: TaskPerformance = field(default_factory=TaskPerformance)
 
-def _answers_to_map(answers: Any) -> dict:
-    """
-    Normalize answers to a dict mapping question_id -> value.
-    Accepts either dict or list of {question_id, value}.
-    """
+
+# ============================================================
+# Feature extraction
+# ============================================================
+
+def answers_to_map(answers: Any) -> dict:
     if isinstance(answers, dict):
         return answers
-    out: dict = {}
+
+    out = {}
     if isinstance(answers, list):
         for item in answers:
             if isinstance(item, dict):
@@ -144,70 +106,80 @@ def _answers_to_map(answers: Any) -> dict:
                     out[k] = v
     return out
 
-def extract_features(session: SessionData) -> list:
-    """
-    Returns list of 8 features in the defined _FEATURE_ORDER.
-    """
-    ans = _answers_to_map(session.answers or {})
-    f: list = []
-    # required numeric features with defaults
+
+def extract_features(session: SessionData) -> list[float]:
+    ans = answers_to_map(session.answers or {})
+
+    f = []
     f.append(float(ans.get("sleep_hours", 0.0)))
     f.append(float(ans.get("energy_level", 0.0)))
     f.append(float(ans.get("stress_level", 0.0)))
-    # typing
+
     tf = session.typing_features
     f.append(float(tf.average_latency_ms))
     f.append(float(tf.total_duration_ms))
     f.append(float(tf.backspace_rate))
-    # task
+
     tp = session.task_performance
     f.append(float(tp.reaction_time_ms or 0.0))
     f.append(1.0 if tp.reaction_attempted else 0.0)
+
     return f
 
-# --- FastAPI app ---
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.staticfiles import StaticFiles
+
+# ============================================================
+# FastAPI app
+# ============================================================
 
 app = FastAPI(title="NeuroFit+")
 
-# demo-only CORS (tighten for prod)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],   # tighten for prod if needed
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# serve static demo files from backend/static (if exists)
 static_dir = Path(__file__).resolve().parent.parent / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+
+# ============================================================
+# Health & meta endpoints
+# ============================================================
 
 @app.get("/")
 def root():
     return {
         "message": "NeuroFit+ root",
-        "model_status": {"loaded": bool(_ml_model), "path": str(_MODEL_FILE)},
+        "model_status": {
+            "loaded": bool(_ml_model),
+            "path": str(MODEL_FILE),
+            "version": MODEL_VERSION
+        },
     }
 
 @app.get("/health")
 def health():
-    return {"status": "healthy", "model_loaded": bool(_ml_model)}
+    return {
+        "status": "healthy",
+        "model_loaded": bool(_ml_model)
+    }
 
 @app.get("/model/features")
 def model_features():
     return {
-        "features": _FEATURE_ORDER,
-        "expected_features": len(_FEATURE_ORDER),
+        "features": FEATURE_ORDER,
+        "expected_features": len(FEATURE_ORDER),
         "model_loaded": bool(_ml_model),
     }
 
-# Request Pydantic models
-class AnswerModel(BaseModel):
-    question_id: str
-    value: float
+
+# ============================================================
+# Request schemas
+# ============================================================
 
 class TypingModel(BaseModel):
     average_latency_ms: float
@@ -224,29 +196,35 @@ class PredictRequest(BaseModel):
     typing_features: TypingModel
     task_performance: TaskPerfModel
 
+
+# ============================================================
+# Prediction endpoint (LOCKED)
+# ============================================================
+
 @app.post("/predict_fatigue")
-def predict(req: PredictRequest):
+def predict_fatigue(req: PredictRequest):
     """
-    Locked, production-safe prediction logic with logging.
+    Production-safe prediction endpoint.
 
-    - Uses regressor predict() only
-    - Normalizes fatigue_score to [0,1]
-    - Derives risk_level strictly from fatigue_score
-    - Logs every prediction safely (JSONL)
+    - ML inference only (no training)
+    - Normalized output [0,1]
+    - Deterministic risk mapping
+    - Heuristic fallback
+    - Logs every prediction
     """
 
-    # --- Build feature vector ---
     td = TypingFeatures(**req.typing_features.dict())
     tp = TaskPerformance(**req.task_performance.dict())
-    sess = SessionData(
+
+    session = SessionData(
         timestamp=req.timestamp,
         answers=req.answers,
         typing_features=td,
         task_performance=tp,
     )
-    features = extract_features(sess)
 
-    # --- Heuristic fallback (safety net) ---
+    features = extract_features(session)
+
     def heuristic_score(f):
         sleep = f[0]
         stress = f[2]
@@ -256,60 +234,57 @@ def predict(req: PredictRequest):
             (stress / 10.0) * 0.3 +
             (latency / 1000.0) * 0.1
         )
-        return max(0.0, min(1.0, float(score)))
+        return max(0.0, min(1.0, score))
 
-    # --- ML prediction ---
+    # ---------------- ML PATH ----------------
     if _ml_model is not None:
         try:
-            import numpy as np
-
             X = np.array([features], dtype=float)
-            raw_pred = _ml_model.predict(X)
+            pred = float(_ml_model.predict(X)[0])
+            fatigue_score = max(0.0, min(1.0, pred))
 
-            fatigue_score = float(raw_pred[0])
-            fatigue_score = max(0.0, min(1.0, fatigue_score))
+            risk = "high" if fatigue_score > 0.5 else "low"
+            recs = ["rest"] if risk == "high" else ["keep going"]
 
-            risk_level = "high" if fatigue_score > 0.5 else "low"
-            recommendations = ["rest"] if fatigue_score > 0.5 else ["keep going"]
-
-            # 🔒 LOG PREDICTION (ML)
             log_prediction({
                 "ts": datetime.utcnow().isoformat(),
                 "features": features,
                 "fatigue_score": fatigue_score,
-                "risk_level": risk_level,
-                "model_used": "ml_model"
+                "risk_level": risk,
+                "model_used": "ml_model",
+                "model_version": MODEL_VERSION
             })
 
             return {
                 "fatigue_score": fatigue_score,
-                "risk_level": risk_level,
-                "recommendations": recommendations,
+                "risk_level": risk,
+                "recommendations": recs,
                 "model_used": "ml_model",
-                "model_type": "regressor"
+                "model_type": "regressor",
+                "model_version": MODEL_VERSION
             }
 
         except Exception as e:
-            logging.getLogger("neurofit").exception(
-                "ML prediction failed, falling back to heuristic: %s", e
-            )
+            logger.exception("ML failed, falling back to heuristic: %s", e)
 
-    # --- Fallback ---
+    # ---------------- FALLBACK ----------------
     score = heuristic_score(features)
+    risk = "high" if score > 0.5 else "low"
 
-    # 🔒 LOG PREDICTION (HEURISTIC)
     log_prediction({
         "ts": datetime.utcnow().isoformat(),
         "features": features,
         "fatigue_score": score,
-        "risk_level": "high" if score > 0.5 else "low",
-        "model_used": "heuristic"
+        "risk_level": risk,
+        "model_used": "heuristic",
+        "model_version": MODEL_VERSION
     })
 
     return {
         "fatigue_score": score,
-        "risk_level": "high" if score > 0.5 else "low",
-        "recommendations": ["rest"] if score > 0.5 else ["keep going"],
+        "risk_level": risk,
+        "recommendations": ["rest"] if risk == "high" else ["keep going"],
         "model_used": "heuristic",
-        "model_type": "heuristic"
+        "model_type": "heuristic",
+        "model_version": MODEL_VERSION
     }
