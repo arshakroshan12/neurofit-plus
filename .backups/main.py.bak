@@ -1,0 +1,250 @@
+from __future__ import annotations
+import os
+import tempfile
+import logging
+from pathlib import Path
+from typing import Any, Optional
+from dataclasses import dataclass
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+# --- robust safe model dir (import-safe, reloader-safe) ---
+def _is_writable_dir(p: Path) -> bool:
+    """Return True if path exists and is writable, or parent is writable."""
+    try:
+        if p.exists() and p.is_dir() and os.access(str(p), os.W_OK):
+            return True
+        parent = p.parent
+        if parent.exists() and os.access(str(parent), os.W_OK):
+            return True
+    except Exception:
+        return False
+    return False
+
+_env_dir = os.environ.get("NEUROFIT_MODEL_DIR")
+if _env_dir:
+    _MODEL_DIR = Path(_env_dir)
+else:
+    try:
+        repo_models = Path(__file__).resolve().parent.parent / "models"
+    except Exception:
+        repo_models = Path.cwd() / "backend" / "models"
+    # only use repo_models if it already exists and is writable
+    if repo_models.exists() and _is_writable_dir(repo_models):
+        _MODEL_DIR = repo_models
+    else:
+        # fallback to system temp (always writable)
+        _MODEL_DIR = Path(tempfile.gettempdir()) / "neurofit_models"
+
+# Try to create the model dir but never raise — if creation fails, fall back to tempdir
+try:
+    _MODEL_DIR.mkdir(parents=True, exist_ok=True)
+except PermissionError:
+    logging.getLogger("neurofit").warning(
+        "Permission denied creating %s — falling back to tempdir", _MODEL_DIR
+    )
+    _MODEL_DIR = Path(tempfile.gettempdir()) / "neurofit_models"
+    try:
+        _MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        logging.getLogger("neurofit").error(
+            "Could not create fallback model dir %s", _MODEL_DIR
+        )
+except Exception:
+    logging.getLogger("neurofit").warning(
+        "Could not create model dir %s (readonly?), using fallback", _MODEL_DIR
+    )
+    _MODEL_DIR = Path(tempfile.gettempdir()) / "neurofit_models"
+    try:
+        _MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        logging.getLogger("neurofit").error(
+            "Could not create fallback model dir %s", _MODEL_DIR
+        )
+# --- end robust safe model dir ---
+
+# try to load ML model if present
+_ml_model = None
+_MODEL_FILE = _MODEL_DIR / "ml_model.joblib"
+try:
+    if _MODEL_FILE.exists():
+        import joblib
+        _ml_model = joblib.load(_MODEL_FILE)
+except Exception:
+    _ml_model = None
+
+# feature order (must match train)
+_FEATURE_ORDER = [
+    "sleep_hours",
+    "energy_level",
+    "stress_level",
+    "avg_key_latency_ms",
+    "total_duration_ms",
+    "backspace_rate",
+    "reaction_time_ms",
+    "reaction_attempted",
+]
+
+# Minimal feature extractor utility
+@dataclass
+class TypingFeatures:
+    average_latency_ms: float = 0.0
+    total_duration_ms: float = 0.0
+    backspace_rate: float = 0.0
+
+@dataclass
+class TaskPerformance:
+    reaction_time_ms: Optional[float] = None
+    reaction_attempted: bool = False
+
+@dataclass
+class SessionData:
+    timestamp: str
+    answers: Any
+    typing_features: TypingFeatures = TypingFeatures()
+    task_performance: TaskPerformance = TaskPerformance()
+
+def _answers_to_map(answers: Any) -> dict:
+    """
+    Normalize answers to a dict mapping question_id -> value.
+    Accepts either dict or list of {question_id, value}.
+    """
+    if isinstance(answers, dict):
+        return answers
+    out: dict = {}
+    if isinstance(answers, list):
+        for item in answers:
+            if isinstance(item, dict):
+                k = item.get("question_id")
+                v = item.get("value")
+                if k is not None:
+                    out[k] = v
+    return out
+
+def extract_features(session: SessionData) -> list:
+    """
+    Returns list of 8 features in the defined _FEATURE_ORDER.
+    """
+    ans = _answers_to_map(session.answers or {})
+    f: list = []
+    # required numeric features with defaults
+    f.append(float(ans.get("sleep_hours", 0.0)))
+    f.append(float(ans.get("energy_level", 0.0)))
+    f.append(float(ans.get("stress_level", 0.0)))
+    # typing
+    tf = session.typing_features
+    f.append(float(tf.average_latency_ms))
+    f.append(float(tf.total_duration_ms))
+    f.append(float(tf.backspace_rate))
+    # task
+    tp = session.task_performance
+    f.append(float(tp.reaction_time_ms or 0.0))
+    f.append(1.0 if tp.reaction_attempted else 0.0)
+    return f
+
+# --- FastAPI app ---
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.staticfiles import StaticFiles
+
+app = FastAPI(title="NeuroFit+")
+
+# demo-only CORS (tighten for prod)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# serve static demo files from backend/static (if exists)
+static_dir = Path(__file__).resolve().parent.parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+@app.get("/")
+def root():
+    return {
+        "message": "NeuroFit+ root",
+        "model_status": {"loaded": bool(_ml_model), "path": str(_MODEL_FILE)},
+    }
+
+@app.get("/health")
+def health():
+    return {"status": "healthy", "model_loaded": bool(_ml_model)}
+
+@app.get("/model/features")
+def model_features():
+    return {
+        "features": _FEATURE_ORDER,
+        "expected_features": len(_FEATURE_ORDER),
+        "model_loaded": bool(_ml_model),
+    }
+
+# Request Pydantic models
+class AnswerModel(BaseModel):
+    question_id: str
+    value: float
+
+class TypingModel(BaseModel):
+    average_latency_ms: float
+    total_duration_ms: float
+    backspace_rate: float
+
+class TaskPerfModel(BaseModel):
+    reaction_time_ms: Optional[float]
+    reaction_attempted: bool
+
+class PredictRequest(BaseModel):
+    timestamp: str
+    answers: Any
+    typing_features: TypingModel
+    task_performance: TaskPerfModel
+
+@app.post("/predict_fatigue")
+def predict(req: PredictRequest):
+    td = TypingFeatures(**req.typing_features.dict())
+    tp = TaskPerformance(**req.task_performance.dict())
+    sess = SessionData(
+        timestamp=req.timestamp,
+        answers=req.answers,
+        typing_features=td,
+        task_performance=tp,
+    )
+    features = extract_features(sess)
+    if _ml_model is not None:
+        try:
+            import numpy as np
+            X = np.array([features])
+            pred = _ml_model.predict(X)
+            proba = None
+            if hasattr(_ml_model, "predict_proba"):
+                proba = _ml_model.predict_proba(X).tolist()
+            return {
+                "fatigue_score": float(pred[0]) if isinstance(pred[0], (float, int)) else 0.0,
+                "risk_level": "high" if float(pred[0]) > 0.5 else "low",
+                "recommendations": ["rest" if float(pred[0]) > 0.5 else "keep going"],
+                "model_used": "ml_model",
+                "model_proba": proba,
+            }
+        except Exception:
+            # fallback to heuristic if model fails
+            pass
+    # heuristic fallback
+    sleep = features[0]
+    stress = features[2]
+    latency = features[3]
+    score = max(
+        0.0,
+        min(
+            1.0,
+            (1.0 - (sleep / 9.0)) * 0.6 + (stress / 10.0) * 0.3 + (latency / 1000.0) * 0.1,
+        ),
+    )
+    return {
+        "fatigue_score": float(score),
+        "risk_level": "high" if score > 0.5 else "low",
+        "recommendations": ["rest" if score > 0.5 else "keep going"],
+        "model_used": "heuristic",
+    }

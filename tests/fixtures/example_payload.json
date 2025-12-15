@@ -1,0 +1,27 @@
+{
+    "timestamp": "2025-12-09T10:00:00Z",
+    "answers": {
+      "sleep_hours": 7,
+      "energy_level": 3,
+      "stress_level": 2
+    },
+    "typing_features": {
+      "average_latency_ms": 120,
+      "total_duration_ms": 180000,
+      "backspace_rate": 0.03
+    },
+    "task_performance": {
+      "reaction_time_ms": 350,
+      "reaction_attempted": true
+    },
+    "user_profile": {
+      "user_id": "demo",
+      "age": 21,
+      "sex": "male",
+      "height_cm": 170,
+      "weight_kg": 70,
+      "fitness_level": "beginner",
+      "injuries": []
+    }
+  }
+  

@@ -1,0 +1,195 @@
+[
+    {
+      "id": "w001",
+      "title": "Morning Mobility Flow",
+      "category": "energizing",
+      "difficulty": "easy",
+      "duration_min": 10,
+      "targets": ["full_body"],
+      "equipment": [],
+      "steps": [
+        "Neck rotations – 30 seconds",
+        "Shoulder rolls – 30 seconds",
+        "Cat-cow stretch – 1 minute",
+        "Hip circles – 1 minute",
+        "Ankle mobility – 1 minute",
+        "Gentle forward fold – 1 minute"
+      ]
+    },
+    {
+      "id": "w002",
+      "title": "Beginner Bodyweight Circuit",
+      "category": "energizing",
+      "difficulty": "medium",
+      "duration_min": 15,
+      "targets": ["legs", "core", "upper_body"],
+      "equipment": [],
+      "steps": [
+        "Squats – 45 seconds",
+        "Push-ups (knee optional) – 30 seconds",
+        "Glute bridge – 45 seconds",
+        "Plank – 30 seconds",
+        "Rest – 30 seconds, repeat twice"
+      ]
+    },
+    {
+      "id": "w003",
+      "title": "Standing Cardio Boost",
+      "category": "energizing",
+      "difficulty": "easy",
+      "duration_min": 12,
+      "targets": ["legs", "cardio"],
+      "equipment": [],
+      "steps": [
+        "March in place – 1 minute",
+        "Side steps – 1 minute",
+        "High knees (low impact) – 30 seconds",
+        "Butt kicks – 30 seconds",
+        "Repeat sequence two more times"
+      ]
+    },
+  
+    {
+      "id": "w004",
+      "title": "Strength & Stability Mix",
+      "category": "balanced",
+      "difficulty": "medium",
+      "duration_min": 20,
+      "targets": ["legs", "core", "upper_body"],
+      "equipment": ["mat"],
+      "steps": [
+        "Lunges – 45 seconds each leg",
+        "Push-ups – 45 seconds",
+        "Side plank – 30 seconds each side",
+        "Bird-dog – 1 minute",
+        "Repeat sequence twice"
+      ]
+    },
+    {
+      "id": "w005",
+      "title": "Core Strength Builder",
+      "category": "balanced",
+      "difficulty": "medium",
+      "duration_min": 15,
+      "targets": ["core"],
+      "equipment": ["mat"],
+      "steps": [
+        "Crunches – 45 seconds",
+        "Bicycle crunch – 30 seconds",
+        "Leg raises – 30 seconds",
+        "Plank – 1 minute",
+        "Rest – 30 seconds, repeat twice"
+      ]
+    },
+    {
+      "id": "w006",
+      "title": "Lower-Body Strength",
+      "category": "balanced",
+      "difficulty": "medium",
+      "duration_min": 18,
+      "targets": ["legs", "glutes"],
+      "equipment": [],
+      "steps": [
+        "Squats – 1 minute",
+        "Reverse lunges – 1 minute",
+        "Calf raises – 1 minute",
+        "Wall sit – 45 seconds",
+        "Repeat sequence twice"
+      ]
+    },
+    {
+      "id": "w007",
+      "title": "Upper-Body Sculpt",
+      "category": "balanced",
+      "difficulty": "medium",
+      "duration_min": 15,
+      "targets": ["upper_body"],
+      "equipment": [],
+      "steps": [
+        "Push-ups – 45 seconds",
+        "Tricep dips using chair – 45 seconds",
+        "Arm circles – 1 minute",
+        "Plank shoulder taps – 45 seconds"
+      ]
+    },
+    {
+      "id": "w008",
+      "title": "Full-Body Functional Workout",
+      "category": "balanced",
+      "difficulty": "hard",
+      "duration_min": 22,
+      "targets": ["full_body"],
+      "equipment": [],
+      "steps": [
+        "Burpees – 30 seconds",
+        "Squat jumps – 30 seconds",
+        "Push-ups – 45 seconds",
+        "Plank – 1 minute",
+        "Rest – 45 seconds, repeat twice"
+      ]
+    },
+  
+    {
+      "id": "w009",
+      "title": "Gentle Stretching Routine",
+      "category": "restorative",
+      "difficulty": "easy",
+      "duration_min": 10,
+      "targets": ["full_body"],
+      "equipment": ["mat"],
+      "steps": [
+        "Neck stretch – 30 seconds",
+        "Chest opener – 1 minute",
+        "Hamstring stretch – 1 minute each side",
+        "Quad stretch – 1 minute each side",
+        "Child’s pose – 2 minutes"
+      ]
+    },
+    {
+      "id": "w010",
+      "title": "Recovery Yoga Flow",
+      "category": "restorative",
+      "difficulty": "easy",
+      "duration_min": 20,
+      "targets": ["full_body"],
+      "equipment": ["mat"],
+      "steps": [
+        "Cat-cow – 1 minute",
+        "Downward dog – 1 minute",
+        "Low lunge – 1 minute each side",
+        "Seated forward fold – 2 minutes",
+        "Supine twist – 1 minute each side",
+        "Savasana – 3 minutes"
+      ]
+    },
+    {
+      "id": "w011",
+      "title": "Breathing & Mindfulness Reset",
+      "category": "restorative",
+      "difficulty": "easy",
+      "duration_min": 8,
+      "targets": ["mind", "stress_relief"],
+      "equipment": [],
+      "steps": [
+        "Box breathing – 2 minutes",
+        "4-7-8 breathing – 2 minutes",
+        "Body scan meditation – 4 minutes"
+      ]
+    },
+    {
+      "id": "w012",
+      "title": "Low-Impact Recovery Circuit",
+      "category": "restorative",
+      "difficulty": "easy",
+      "duration_min": 12,
+      "targets": ["legs", "core"],
+      "equipment": [],
+      "steps": [
+        "Glute bridge – 1 minute",
+        "Standing knee raises – 1 minute",
+        "Pelvic tilts – 1 minute",
+        "Side-lying leg lifts – 1 minute each side"
+      ]
+    }
+  ]
+  

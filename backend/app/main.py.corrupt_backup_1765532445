@@ -1,0 +1,41 @@
+_env_dir = os.environ.get("NEUROFIT_MODEL_DIR")
+if _env_dir:
+    _MODEL_DIR = Path(_env_dir)
+else:
+    # Prefer repo-local backend/models if present or writable; otherwise fallback to system temp
+    repo_models = Path(__file__).resolve().parent.parent / "models"  # backend/models
+    if repo_models.exists() or (repo_models.parent.exists() and os.access(str(repo_models.parent), os.W_OK)):
+        _MODEL_DIR = repo_models
+    else:
+        _MODEL_DIR = Path(tempfile.gettempdir()) / "neurofit_models"
+
+# Try to create the model dir only if parent is writable. Do not raise on import.
+try:
+    parent = _MODEL_DIR.parent
+    if _MODEL_DIR.exists() or os.access(str(parent), os.W_OK):
+        _MODEL_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    logging.getLogger("neurofit").warning("Could not create model dir %s (readonly?), using fallback", _MODEL_DIR)
+# --- end safe model dir handling ---
+"""
+
+if "_MODEL_DIR" in txt:
+    # attempt a robust replacement: remove any existing block that sets _MODEL_DIR and mkdir lines
+    # Replace from the first occurrence of "_MODEL_DIR" to the end of the following small region.
+    new_txt = re.sub(r"(?s).*?(_MODEL_DIR\s*=.*?mkdir\(.*?\).*?\n)", safe_snippet, txt, count=1)
+    # If regex failed (no mkdir found), try a simpler insertion: prepend snippet if not already present.
+    if new_txt == txt:
+        if "safe model dir handling" not in txt:
+            new_txt = safe_snippet + "\n" + txt
+        else:
+            new_txt = txt
+else:
+    # no _MODEL_DIR mention — prepend snippet
+    new_txt = safe_snippet + "\n" + txt
+
+p.write_text(new_txt)
+print("Patched backend/app/main.py (backup created).")
+PY
+
+# Run the single failing test to check
+.venv-tests/bin/python -m pytest backend/tests/test_api.py::test_predict_endpoint_smoke -q || true

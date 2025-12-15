@@ -1,252 +1,395 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>NeuroFit+ — Demo UI</title>
-  <style>
-    :root{--bg:#0f172a;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;--good:#22c55e}
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
-    body{background:linear-gradient(180deg,#071027 0%,#071225 100%);color:#e6eef8;padding:28px;}
-    .wrap{max-width:900px;margin:0 auto}
-    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
-    h1{font-size:20px;margin:0}
-    small{color:var(--muted)}
-    .grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
-    .card{background:rgba(255,255,255,0.03);padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
-    label{display:block;margin:6px 0 4px;font-size:13px;color:var(--muted)}
-    input[type=number],select,textarea{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
-    textarea{height:120px;resize:vertical}
-    .row{display:flex;gap:8px}
-    button{background:var(--accent);border:none;padding:10px 12px;border-radius:8px;color:#041122;font-weight:600;cursor:pointer}
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-    pre{background:#021122;padding:12px;border-radius:8px;overflow:auto;color:#e6eef8}
-    .muted{color:var(--muted);font-size:13px}
-    .stat{font-weight:700}
-    .reaction-box{height:80px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.02);cursor:pointer}
-    footer{margin-top:18px;color:var(--muted);font-size:13px}
-    .flex{display:flex;gap:8px;align-items:center}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NeuroFit+ — Demo UI</title>
+
+<style>
+/* ------------------------------
+   Modern Clean UI Styling
+--------------------------------*/
+:root {
+  --primary: #0b72ff;
+  --primary-hover: #005de0;
+  --bg: #f3f5fa;
+  --card-bg: #ffffff;
+  --accent: #11c976;
+  --warn: #ff8c42;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --radius: 14px;
+  --shadow: 0 8px 24px rgba(0,0,0,0.06);
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+}
+
+/* Reset */
+body {
+  margin: 0;
+  padding: 20px;
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--text);
+}
+
+/* Container */
+.card {
+  background: var(--card-bg);
+  padding: 28px;
+  border-radius: var(--radius);
+  max-width: 900px;
+  margin: 0 auto;
+  box-shadow: var(--shadow);
+}
+
+h1 {
+  font-size: 24px;
+  margin: 0;
+  font-weight: 700;
+}
+
+.section-title {
+  margin: 24px 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+label {
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 14px;
+  display: block;
+}
+
+input, textarea {
+  width: 100%;
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 6px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.row {
+  display: flex;
+  gap: 18px;
+}
+
+.col {
+  flex: 1;
+}
+
+button {
+  border: none;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+/* Buttons */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-reaction {
+  background: var(--warn);
+  color: #fff;
+}
+.btn-reaction.ready {
+  background: var(--accent);
+  color: #fff;
+}
+
+.badge {
+  background: #e8eeff;
+  color: var(--primary);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.small {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+pre {
+  background: #0f172a;
+  color: #dbeafe;
+  padding: 16px;
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.metric-box {
+  background: #f0f4ff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.metric-title {
+  color: var(--muted);
+  font-size: 12px;
+}
+.metric-value {
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 2px;
+  color: var(--primary-hover);
+}
+
+/* Spacing helpers */
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.mt-2 { margin-top: 16px; }
+.mt-3 { margin-top: 22px; }
+
+</style>
 </head>
+
 <body>
-  <div class="wrap">
-    <header>
-      <h1>NeuroFit+ — Quick Demo UI</h1>
-      <small>Client for <code>/predict_fatigue</code> API (local)</small>
-    </header>
+<div class="card">
 
-    <div class="grid">
-      <div class="card">
-        <h3>Inputs</h3>
-        <p class="muted">Fill the questionnaire, type in the box (typing features measured), run a quick reaction test, then predict.</p>
-
-        <label>Sleep hours</label>
-        <input id="sleep_hours" type="number" step="0.5" value="7" min="0" max="24" />
-
-        <label>Energy level (1-5)</label>
-        <input id="energy_level" type="number" step="1" value="3" min="1" max="5" />
-
-        <label>Stress level (1-5)</label>
-        <input id="stress_level" type="number" step="1" value="2" min="1" max="5" />
-
-        <label>Typing area (type freely, backspace and latency tracked)</label>
-        <textarea id="typing_area" placeholder="Type here for ~15 seconds to record typing features..."></textarea>
-        <div class="row" style="margin-top:8px">
-          <button id="reset_typing" class="ghost">Reset typing stats</button>
-          <div style="margin-left:auto;text-align:right">
-            <div class="muted">Avg latency <span id="avg_latency" class="stat">0</span> ms</div>
-            <div class="muted">Backspace rate <span id="backspace_rate" class="stat">0%</span></div>
-          </div>
-        </div>
-
-        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.04)" />
-
-        <label>Reaction test</label>
-        <div id="reaction_box" class="reaction-box">Click "Start" to begin</div>
-        <div class="row" style="margin-top:8px">
-          <button id="start_reaction">Start Reaction Test</button>
-          <div style="margin-left:auto;text-align:right">
-            <div class="muted">Reaction time: <span id="reaction_value" class="stat">—</span> ms</div>
-            <div class="muted">Attempted: <span id="reaction_attempted" class="stat">false</span></div>
-          </div>
-        </div>
-
-        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.04)" />
-
-        <div class="row">
-          <button id="predict">Predict Fatigue</button>
-          <button id="health" class="ghost">Health</button>
-          <button id="features" class="ghost">Model Features</button>
-        </div>
-
-        <div style="margin-top:12px">
-          <div class="muted">Server URL</div>
-          <input id="server_url" value="http://localhost:8000" />
-        </div>
-
-      </div>
-
-      <div class="card">
-        <h3>Output</h3>
-        <div class="muted">Latest request / response</div>
-        <pre id="output">No requests yet</pre>
-
-        <h4 style="margin-top:12px">Debug</h4>
-        <div class="muted">Typing raw stats</div>
-        <pre id="typing_debug">{}</pre>
-      </div>
-    </div>
-
-    <footer>
-      Tips: Start the backend (uvicorn app.main:app --reload --port 8000). If you see a CORS error, add CORS middleware to your FastAPI app (I can provide the snippet).
-    </footer>
+  <div class="flex-between">
+    <h1>NeuroFit+ — Cognitive Fatigue Demo</h1>
+    <span class="badge">DEMO</span>
   </div>
 
-<script>
-// --- typing metrics ---
-const area = document.getElementById('typing_area');
-const avgLatencyEl = document.getElementById('avg_latency');
-const backspaceEl = document.getElementById('backspace_rate');
-const typingDebug = document.getElementById('typing_debug');
-let keyTimestamps = [];
-let backspaceCount = 0;
-let typingStart = null;
+  <div class="small" style="margin-bottom:20px;">
+    This UI collects typing metrics, sleep/stress inputs, and a reaction test → and posts them to  
+    <code>/predict_fatigue</code>.
+  </div>
 
-area.addEventListener('keydown', (e) => {
+  <!-- Timestamp -->
+  <label>Timestamp
+    <input id="timestamp" type="text" />
+  </label>
+
+  <!-- Sleep / Energy / Stress -->
+  <div class="section-title">Wellbeing Inputs</div>
+
+  <div class="row">
+    <div class="col">
+      <label>Sleep hours (0–12)
+        <input id="sleep_hours" type="number" min="0" max="12" value="6" />
+      </label>
+    </div>
+    <div class="col">
+      <label>Energy (0–10)
+        <input id="energy_level" type="number" min="0" max="10" value="5" />
+      </label>
+    </div>
+    <div class="col">
+      <label>Stress (0–10)
+        <input id="stress_level" type="number" min="0" max="10" value="3" />
+      </label>
+    </div>
+  </div>
+
+  <!-- Typing -->
+  <div class="section-title">Typing Assessment</div>
+  <label>Type something (we compute your typing speed + behavior)
+    <textarea id="typing_area" rows="5"></textarea>
+  </label>
+
+  <div class="row mt-2">
+    <div class="col">
+      <div class="metric-box">
+        <div class="metric-title">Avg Latency</div>
+        <div class="metric-value" id="avg_latency">—</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="metric-box">
+        <div class="metric-title">Total Duration</div>
+        <div class="metric-value" id="total_duration">—</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="metric-box">
+        <div class="metric-title">Backspace Rate</div>
+        <div class="metric-value" id="backspace_rate">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reaction Test -->
+  <div class="section-title mt-3">Reaction Test</div>
+
+  <div class="row">
+    <div class="col">
+      <button id="reaction_btn" class="btn-reaction">Start Reaction Test</button>
+      <div id="reaction_status" class="small mt-2">Not started</div>
+    </div>
+
+    <div class="col">
+      <div class="metric-box">
+        <div class="metric-title">Reaction Time</div>
+        <div class="metric-value" id="reaction_time">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Predict -->
+  <div class="flex-between mt-3">
+    <div class="small">POST → <code>/predict_fatigue</code></div>
+    <button id="send_btn" class="btn-primary">Run Prediction</button>
+  </div>
+
+  <!-- Response -->
+  <div class="section-title">Response</div>
+  <pre id="result">{ "status": "awaiting" }</pre>
+
+</div>
+
+<script>
+/* --- JavaScript Logic (same functionality, cleaner UI) --- */
+const $ = id => document.getElementById(id);
+
+const typingArea = $('typing_area');
+const avgLatencyEl = $('avg_latency');
+const totalDurationEl = $('total_duration');
+const backspaceRateEl = $('backspace_rate');
+const reactionBtn = $('reaction_btn');
+const reactionStatus = $('reaction_status');
+const reactionTimeEl = $('reaction_time');
+const sendBtn = $('send_btn');
+const resultEl = $('result');
+const timestampEl = $('timestamp');
+
+let keyTimes = [];
+let typingStart = null;
+let typingEnd = null;
+let backspaceCount = 0;
+
+// Typing metrics
+typingArea.addEventListener('keydown', e => {
   const now = performance.now();
   if (!typingStart) typingStart = now;
-  keyTimestamps.push(now);
-  if (e.key === 'Backspace') backspaceCount += 1;
+  keyTimes.push(now);
+  if (e.key === 'Backspace') backspaceCount++;
 });
 
-function computeTypingFeatures(){
-  if (!typingStart) return {average_latency_ms:0,total_duration_ms:0,backspace_rate:0};
-  const totalDuration = (keyTimestamps[keyTimestamps.length-1] - typingStart) || 0;
-  let latencies = [];
-  for (let i=1;i<keyTimestamps.length;i++) latencies.push(keyTimestamps[i]-keyTimestamps[i-1]);
-  const avg = latencies.length ? (latencies.reduce((a,b)=>a+b,0)/latencies.length) : 0;
-  const backspaceRate = keyTimestamps.length ? (backspaceCount / keyTimestamps.length) : 0;
-  return {average_latency_ms: Math.round(avg), total_duration_ms: Math.round(totalDuration), backspace_rate: Number(backspaceRate.toFixed(3))};
+typingArea.addEventListener('blur', computeTyping);
+
+function computeTyping(){
+  if (keyTimes.length < 2) return;
+
+  // latencies
+  let deltas = [];
+  for (let i=1;i<keyTimes.length;i++) deltas.push(keyTimes[i]-keyTimes[i-1]);
+
+  const avg = deltas.reduce((a,b)=>a+b,0) / deltas.length;
+  const total = (keyTimes[keyTimes.length-1] - keyTimes[0]);
+  const rate = backspaceCount / keyTimes.length;
+
+  avgLatencyEl.textContent = Math.round(avg);
+  totalDurationEl.textContent = Math.round(total);
+  backspaceRateEl.textContent = rate.toFixed(3);
 }
 
-function updateTypingUI(){
-  const f = computeTypingFeatures();
-  avgLatencyEl.textContent = f.average_latency_ms;
-  backspaceEl.textContent = (f.backspace_rate*100).toFixed(1) + '%';
-  typingDebug.textContent = JSON.stringify(f, null, 2);
-}
+// Reaction test
+let reactionStart = null;
+let timeoutHandle = null;
 
-document.getElementById('reset_typing').addEventListener('click', ()=>{
-  keyTimestamps = [];
-  backspaceCount = 0;
-  typingStart = null;
-  area.value = '';
-  updateTypingUI();
-});
-
-setInterval(updateTypingUI, 600);
-
-// --- reaction test ---
-const reactionBox = document.getElementById('reaction_box');
-let waiting = false;
-let startTime = 0;
-let reactionTime = null;
-let reactionAttempted = false;
-
-function showMessage(msg){
-  reactionBox.textContent = msg;
-}
-
-function startReaction(){
-  if (waiting) return;
-  reactionAttempted = false;
-  showMessage('Get ready...');
-  waiting = true;
-  const delay = 800 + Math.random()*1700; // 0.8s - 2.5s
-  setTimeout(()=>{
-    startTime = performance.now();
-    showMessage('CLICK!');
-    reactionBox.style.background = 'linear-gradient(90deg, #06b6d4, #3b82f6)';
-  }, delay);
-}
-
-reactionBox.addEventListener('click', ()=>{
-  if (!waiting || startTime===0){
-    // user clicked too early
-    showMessage('Start the test with the Start button');
+reactionBtn.addEventListener('click', () => {
+  if (timeoutHandle){
+    clearTimeout(timeoutHandle);
+    resetReaction("Cancelled");
     return;
   }
-  const now = performance.now();
-  reactionTime = Math.round(now - startTime);
-  waiting = false;
-  startTime = 0;
-  reactionAttempted = true;
-  reactionBox.style.background = '';
-  document.getElementById('reaction_value').textContent = reactionTime;
-  document.getElementById('reaction_attempted').textContent = 'true';
-  showMessage('Done — ' + reactionTime + ' ms');
+  reactionStatus.textContent = "Wait for green...";
+  reactionBtn.classList.remove('ready');
+  reactionBtn.textContent = "Waiting…";
+
+  timeoutHandle = setTimeout(()=>{
+    reactionBtn.textContent = "CLICK!";
+    reactionBtn.classList.add('ready');
+    reactionStatus.textContent = "Click now!";
+    reactionStart = performance.now();
+  }, 700 + Math.random()*1500);
 });
 
-document.getElementById('start_reaction').addEventListener('click', ()=>{
-  document.getElementById('reaction_value').textContent = '...';
-  document.getElementById('reaction_attempted').textContent = 'false';
-  startReaction();
+reactionBtn.addEventListener('mousedown', () => {
+  if (!reactionStart){
+    // early click
+    if (timeoutHandle){
+      resetReaction("Too early — reset");
+    }
+    return;
+  }
+  const r = performance.now() - reactionStart;
+  reactionTimeEl.textContent = Math.round(r);
+  resetReaction("Measured");
 });
 
-// --- server interactions ---
-const out = document.getElementById('output');
-const serverUrlInput = document.getElementById('server_url');
-
-async function callHealth(){
-  const url = serverUrlInput.value + '/health';
-  try{
-    const r = await fetch(url);
-    const j = await r.json();
-    out.textContent = JSON.stringify({url, status: r.status, body: j}, null, 2);
-  }catch(e){ out.textContent = String(e); }
-}
-
-async function callFeatures(){
-  const url = serverUrlInput.value + '/model/features';
-  try{
-    const r = await fetch(url);
-    const j = await r.json();
-    out.textContent = JSON.stringify({url, status: r.status, body: j}, null, 2);
-  }catch(e){ out.textContent = String(e); }
-}
-
-async function callPredict(){
-  const url = serverUrlInput.value + '/predict_fatigue';
-  const typing = computeTypingFeatures();
-  const payload = {
-    timestamp: new Date().toISOString(),
-    answers: [
-      {question_id:'sleep_hours', value: Number(document.getElementById('sleep_hours').value) },
-      {question_id:'energy_level', value: Number(document.getElementById('energy_level').value) },
-      {question_id:'stress_level', value: Number(document.getElementById('stress_level').value) }
-    ],
-    typing_features: typing,
-    task_performance:{ reaction_time_ms: reactionTime, reaction_attempted: reactionAttempted }
-  };
-  out.textContent = 'Sending... ' + JSON.stringify(payload, null, 2);
-  try{
-    const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
-    const j = await r.json();
-    out.textContent = JSON.stringify({url, status: r.status, request: payload, response: j}, null, 2);
-  }catch(e){
-    out.textContent = 'Error: ' + e + '\n\nTip: this may be a CORS error. To fix, add FastAPI CORS middleware or run this page from same origin.';
+function resetReaction(msg){
+  reactionStatus.textContent = msg;
+  reactionBtn.textContent = "Start Reaction Test";
+  reactionBtn.classList.remove('ready');
+  reactionStart = null;
+  if (timeoutHandle){
+    clearTimeout(timeoutHandle);
+    timeoutHandle = null;
   }
 }
 
-document.getElementById('health').addEventListener('click', callHealth);
-document.getElementById('features').addEventListener('click', callFeatures);
-document.getElementById('predict').addEventListener('click', callPredict);
+// Prediction
+sendBtn.addEventListener('click', async () => {
+  computeTyping();
+  const payload = {
+    timestamp: timestampEl.value || new Date().toISOString(),
+    answers: [
+      {question_id:"sleep_hours", value: Number($('sleep_hours').value)},
+      {question_id:"energy_level", value: Number($('energy_level').value)},
+      {question_id:"stress_level", value: Number($('stress_level').value)},
+    ],
+    typing_features: {
+      average_latency_ms: Number(avgLatencyEl.textContent) || 0,
+      total_duration_ms: Number(totalDurationEl.textContent) || 0,
+      backspace_rate: Number(backspaceRateEl.textContent) || 0,
+    },
+    task_performance: {
+      reaction_time_ms: reactionTimeEl.textContent === '—' ? null : Number(reactionTimeEl.textContent),
+      reaction_attempted: reactionTimeEl.textContent !== '—'
+    }
+  };
 
-// convenience: if user presses Ctrl+Enter on typing area, trigger predict
-area.addEventListener('keydown', (e)=>{ if (e.ctrlKey && e.key==='Enter') callPredict(); });
+  resultEl.textContent = "Sending...";
+  try{
+    const res = await fetch('/predict_fatigue', {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    resultEl.textContent = JSON.stringify(json, null, 2);
+  } catch(err){
+    resultEl.textContent = "Error: " + err.message;
+  }
+});
 
-// initial UI update
-updateTypingUI();
+// init timestamp
+timestampEl.value = new Date().toISOString();
+
 </script>
 </body>
 </html>

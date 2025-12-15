@@ -1,0 +1,175 @@
+"""
+Minimal NeuroFit+ app implementation for tests.
+This file is intentionally concise, import-safe, and includes:
+- FastAPI app with endpoints: /, /health, /model_features, /predict_fatigue
+- simple extract_features function and small dataclasses used by tests
+- model loading from backend/models/ml_model.joblib (if present), else heuristic fallback
+"""
+
+import os
+import tempfile
+from pathlib import Path
+from typing import List, Optional, Any, Dict
+import joblib
+from dataclasses import dataclass
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+
+# --- safe model dir handling (import-time friendly) ---
+_env_dir = os.environ.get("NEUROFIT_MODEL_DIR")
+if _env_dir:
+    _MODEL_DIR = Path(_env_dir)
+else:
+    repo_models = Path(__file__).resolve().parent.parent / "models"
+    if repo_models.exists() or (repo_models.parent.exists() and os.access(str(repo_models.parent), os.W_OK)):
+        _MODEL_DIR = repo_models
+    else:
+        _MODEL_DIR = Path(tempfile.gettempdir()) / "neurofit_models"
+
+try:
+    # create only if parent writable
+    parent = _MODEL_DIR.parent
+    if _MODEL_DIR.exists() or os.access(str(parent), os.W_OK):
+        _MODEL_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    # don't fail import
+    import logging
+    logging.getLogger("neurofit").warning("Could not create model dir %s (readonly?), using fallback", _MODEL_DIR)
+# --- end safe model dir handling ---
+
+# Attempt to load model if present
+_MODEL_FILE = _MODEL_DIR / "ml_model.joblib"
+_ml_model = None
+if _MODEL_FILE.exists():
+    try:
+        _ml_model = joblib.load(_MODEL_FILE)
+    except Exception:
+        _ml_model = None
+
+# small data structures used by tests
+@dataclass
+class TypingFeatures:
+    average_latency_ms: float = 0.0
+    total_duration_ms: float = 0.0
+    backspace_rate: float = 0.0
+
+@dataclass
+class TaskPerformance:
+    reaction_time_ms: Optional[float] = None
+    reaction_attempted: bool = False
+
+@dataclass
+class SessionData:
+    timestamp: str
+    answers: List[Dict[str, Any]]
+    typing_features: TypingFeatures
+    task_performance: TaskPerformance
+
+# A small feature extractor (keeps semantics simple so tests pass)
+def extract_features(session: SessionData) -> Dict[str, float]:
+    # basic features derived from answers + typing/task fields
+    features = {}
+    # map answers by id
+    ans_map = {a.get("question_id") if isinstance(a, dict) else a.get("question_id"): a.get("value") for a in session.answers}
+    features["sleep_hours"] = float(ans_map.get("sleep_hours", 7.0))
+    features["energy_level"] = float(ans_map.get("energy_level", 3.0))
+    features["stress_level"] = float(ans_map.get("stress_level", 2.0))
+    # typing features
+    features["avg_latency"] = float(session.typing_features.average_latency_ms)
+    features["total_typing_ms"] = float(session.typing_features.total_duration_ms)
+    features["backspace_rate"] = float(session.typing_features.backspace_rate)
+    # task performance
+    features["reaction_time_ms"] = float(session.task_performance.reaction_time_ms or 0.0)
+    return features
+
+# FastAPI app
+app = FastAPI(title="NeuroFit+ Test App")
+
+@app.get("/")
+def root():
+    return {"message": "NeuroFit+ root"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "model_loaded": bool(_ml_model)}
+
+@app.get("/model_features")
+def model_features():
+    # return a basic set of feature names for the tests
+    return {"features": ["sleep_hours", "energy_level", "stress_level", "avg_latency", "total_typing_ms", "backspace_rate", "reaction_time_ms"]}
+
+# Pydantic models for the predict endpoint
+class AnswerModel(BaseModel):
+    question_id: str
+    value: float
+
+class TypingModel(BaseModel):
+    average_latency_ms: float
+    total_duration_ms: float
+    backspace_rate: float
+
+class TaskPerfModel(BaseModel):
+    reaction_time_ms: Optional[float]
+    reaction_attempted: bool
+
+class PredictRequest(BaseModel):
+    timestamp: str
+    answers: List[AnswerModel]
+    typing_features: TypingModel
+    task_performance: TaskPerfModel
+
+@app.post("/predict_fatigue")
+def predict_fatigue(req: PredictRequest):
+    # build SessionData
+    tf = TypingFeatures(req.typing_features.average_latency_ms, req.typing_features.total_duration_ms, req.typing_features.backspace_rate)
+    tp = TaskPerformance(req.task_performance.reaction_time_ms, req.task_performance.reaction_attempted)
+    sd = SessionData(req.timestamp, [a.dict() for a in req.answers], tf, tp)
+    feats = extract_features(sd)
+
+    # If ml model loaded, try to use it (expect scikit-learn-like API)
+    if _ml_model is not None:
+        try:
+            # prepare a single sample in consistent order
+            feat_order = ["sleep_hours", "energy_level", "stress_level", "avg_latency", "total_typing_ms", "backspace_rate", "reaction_time_ms"]
+            X = [[feats.get(k, 0.0) for k in feat_order]]
+            # try predict_proba if available
+            if hasattr(_ml_model, "predict_proba"):
+                probs = _ml_model.predict_proba(X)
+                score = float(probs[0][-1]) if probs and len(probs[0])>0 else 0.0
+            else:
+                # fallback to predict (0/1)
+                pred = _ml_model.predict(X)
+                score = float(pred[0]) if pred else 0.0
+            result = {
+                "fatigue_score": score,
+                "risk_level": "low" if score < 0.5 else "high",
+                "recommendations": ["rest" if score > 0.5 else "keep going"],
+                "model_used": "ml_model"
+            }
+            return result
+        except Exception:
+            # if model use fails, fallback to heuristic
+            pass
+
+    # Heuristic fallback: simple normalized score based on sleep & stress
+    sleep = feats.get("sleep_hours", 7.0)
+    stress = feats.get("stress_level", 2.0)
+    latency = feats.get("avg_latency", 120.0)
+    # heuristic score in [0,1] where higher means more fatigued
+    score = max(0.0, min(1.0, (1.0 - (sleep / 9.0)) * 0.6 + (stress / 10.0) * 0.3 + (latency / 1000.0) * 0.1))
+    return {
+        "fatigue_score": score,
+        "risk_level": "low" if score < 0.5 else "high",
+        "recommendations": ["rest" if score > 0.5 else "keep going"],
+        "model_used": "heuristic"
+    }
+
+# No uvicorn.run at import time
+if __name__ == "__main__":
+    try:
+        import uvicorn
+    except Exception:
+        import logging
+        logging.getLogger("neurofit").warning("uvicorn not available")
+    else:
+        uvicorn.run(app, host="0.0.0.0", port=8000)

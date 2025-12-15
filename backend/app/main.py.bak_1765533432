@@ -1,0 +1,217 @@
+"""
+Test-compatible NeuroFit+ minimal app.
+Matches the tests' expected routes, response keys and data shapes.
+"""
+
+import os
+import tempfile
+from pathlib import Path
+from typing import List, Dict, Any, Optional, Union
+from dataclasses import dataclass, field
+import joblib
+import numpy as np
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+# --- safe model dir handling ---
+_env_dir = os.environ.get("NEUROFIT_MODEL_DIR")
+if _env_dir:
+    _MODEL_DIR = Path(_env_dir)
+else:
+    repo_models = Path(__file__).resolve().parent.parent / "models"
+    if repo_models.exists() or (repo_models.parent.exists() and os.access(str(repo_models.parent), os.W_OK)):
+        _MODEL_DIR = repo_models
+    else:
+        _MODEL_DIR = Path(tempfile.gettempdir()) / "neurofit_models"
+try:
+    parent = _MODEL_DIR.parent
+    if _MODEL_DIR.exists() or os.access(str(parent), os.W_OK):
+        _MODEL_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    import logging
+    logging.getLogger("neurofit").warning("Could not create model dir %s", _MODEL_DIR)
+# --- end safe model dir handling ---
+
+_MODEL_FILE = _MODEL_DIR / "ml_model.joblib"
+_ml_model = None
+if _MODEL_FILE.exists():
+    try:
+        _ml_model = joblib.load(_MODEL_FILE)
+    except Exception:
+        _ml_model = None
+
+def _model_exists() -> bool:
+    return _MODEL_FILE.exists()
+
+# Data classes expected by tests (with defaults)
+@dataclass
+class TypingFeatures:
+    average_latency_ms: float = 0.0
+    total_duration_ms: float = 0.0
+    backspace_rate: float = 0.0
+
+@dataclass
+class TaskPerformance:
+    reaction_time_ms: Optional[float] = None
+    reaction_attempted: bool = False
+
+@dataclass
+class SessionData:
+    timestamp: str
+    answers: Union[List[Dict[str, Any]], Dict[str, float]] = field(default_factory=list)
+    typing_features: TypingFeatures = field(default_factory=TypingFeatures)
+    task_performance: TaskPerformance = field(default_factory=TaskPerformance)
+
+# Feature order used throughout (must be consistent)
+_FEATURE_ORDER = [
+    "sleep_hours",
+    "energy_level",
+    "stress_level",
+    "avg_latency",
+    "total_typing_ms",
+    "backspace_rate",
+    "reaction_time_ms",
+]
+
+def _normalize_answers(answers: Union[List[Dict[str, Any]], Dict[str, float]]) -> Dict[str, float]:
+    """Return map question_id -> value no matter input format."""
+    if isinstance(answers, dict):
+        return {k: float(v) for k, v in answers.items()}
+    out = {}
+    for a in answers:
+        # accept dicts, or pydantic-like objects with .get
+        if isinstance(a, dict):
+            q = a.get("question_id")
+            v = a.get("value")
+            if q is not None:
+                out[q] = float(v)
+        else:
+            # tolerant: if it's a string key (older broken inputs), skip
+            try:
+                q = a.question_id
+                v = a.value
+                out[q] = float(v)
+            except Exception:
+                continue
+    return out
+
+def extract_features(session: SessionData) -> np.ndarray:
+    """
+    Return numpy array shaped (1, n_features) in _FEATURE_ORDER.
+    Accepts SessionData.answers as list-of-dicts or dict.
+    """
+    ans_map = _normalize_answers(session.answers)
+    sleep = float(ans_map.get("sleep_hours", 7.0))
+    energy = float(ans_map.get("energy_level", 3.0))
+    stress = float(ans_map.get("stress_level", 2.0))
+    avg_latency = float(session.typing_features.average_latency_ms)
+    total_typing = float(session.typing_features.total_duration_ms)
+    backspace = float(session.typing_features.backspace_rate)
+    reaction = float(session.task_performance.reaction_time_ms or 0.0)
+    vals = [sleep, energy, stress, avg_latency, total_typing, backspace, reaction]
+    return np.array([vals], dtype=float)
+
+# FastAPI app with routes expected by tests
+app = FastAPI(title="NeuroFit+ Test App")
+
+@app.get("/")
+def root():
+    return {
+        "message": "NeuroFit+ root",
+        "model_status": {
+            "loaded": bool(_ml_model),
+            "path": str(_MODEL_FILE)
+        }
+    }
+
+@app.get("/health")
+def health():
+    return {"status": "healthy", "model_loaded": bool(_ml_model)}
+
+@app.get("/model/features")
+def model_features():
+    return {"features": _FEATURE_ORDER}
+
+# Pydantic models for endpoint validation (supports list or dict for answers)
+class AnswerModel(BaseModel):
+    question_id: str
+    value: float
+
+class TypingModel(BaseModel):
+    average_latency_ms: float = 0.0
+    total_duration_ms: float = 0.0
+    backspace_rate: float = 0.0
+
+class TaskPerfModel(BaseModel):
+    reaction_time_ms: Optional[float] = None
+    reaction_attempted: bool = False
+
+class PredictRequest(BaseModel):
+    timestamp: str
+    answers: Union[List[AnswerModel], Dict[str, float]]
+    typing_features: TypingModel
+    task_performance: TaskPerfModel
+
+@app.post("/predict_fatigue")
+def predict_fatigue(req: PredictRequest):
+    # normalize answers to a dict
+    answers_in = req.answers
+    if isinstance(answers_in, dict):
+        answers_map = {k: float(v) for k, v in answers_in.items()}
+        answers_list = [{"question_id": k, "value": v} for k, v in answers_map.items()]
+    else:
+        answers_list = [a.dict() for a in answers_in]
+        answers_map = _normalize_answers(answers_list)
+
+    session = SessionData(
+        timestamp=req.timestamp,
+        answers=answers_list,
+        typing_features=TypingFeatures(
+            average_latency_ms=req.typing_features.average_latency_ms,
+            total_duration_ms=req.typing_features.total_duration_ms,
+            backspace_rate=req.typing_features.backspace_rate
+        ),
+        task_performance=TaskPerformance(
+            reaction_time_ms=req.task_performance.reaction_time_ms,
+            reaction_attempted=req.task_performance.reaction_attempted
+        )
+    )
+
+    X = extract_features(session)  # numpy array (1, n_features)
+
+    # Use ML model if available
+    if _ml_model is not None:
+        try:
+            # if model expects 2D array, pass X
+            if hasattr(_ml_model, "predict_proba"):
+                probs = _ml_model.predict_proba(X.tolist())
+                score = float(probs[0][-1]) if probs and len(probs[0])>0 else 0.0
+            else:
+                pred = _ml_model.predict(X.tolist())
+                score = float(pred[0]) if pred else 0.0
+            return {
+                "fatigue_score": score,
+                "risk_level": "low" if score < 0.5 else "high",
+                "recommendations": ["rest" if score > 0.5 else "keep going"],
+                "model_used": "ml_model"
+            }
+        except Exception:
+            # fall through to heuristic
+            pass
+
+    # Heuristic fallback (deterministic)
+    sleep = X[0,0]
+    stress = X[0,2]
+    latency = X[0,3]
+    score = max(0.0, min(1.0, (1.0 - (sleep / 9.0)) * 0.6 + (stress / 10.0) * 0.3 + (latency / 1000.0) * 0.1))
+    return {
+        "fatigue_score": float(score),
+        "risk_level": "low" if score < 0.5 else "high",
+        "recommendations": ["rest" if score > 0.5 else "keep going"],
+        "model_used": "heuristic"
+    }
+
+# helper for tests
+def get_feature_order() -> List[str]:
+    return _FEATURE_ORDER
+
