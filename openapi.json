@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "NeuroFit+ Test App",
+    "title": "NeuroFit+",
     "version": "0.1.0"
   },
   "paths": {
@@ -55,8 +55,9 @@
     },
     "/predict_fatigue": {
       "post": {
-        "summary": "Predict Fatigue",
-        "operationId": "predict_fatigue_predict_fatigue_post",
+        "summary": "Predict",
+        "description": "Locked, production-safe prediction logic with logging.\n\n- Uses regressor predict() only\n- Normalizes fatigue_score to [0,1]\n- Derives risk_level strictly from fatigue_score\n- Logs every prediction safely (JSONL)",
+        "operationId": "predict_predict_fatigue_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -92,24 +93,6 @@
   },
   "components": {
     "schemas": {
-      "AnswerModel": {
-        "properties": {
-          "question_id": {
-            "type": "string",
-            "title": "Question Id"
-          },
-          "value": {
-            "type": "number",
-            "title": "Value"
-          }
-        },
-        "type": "object",
-        "required": [
-          "question_id",
-          "value"
-        ],
-        "title": "AnswerModel"
-      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -130,20 +113,6 @@
             "title": "Timestamp"
           },
           "answers": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/AnswerModel"
-                },
-                "type": "array"
-              },
-              {
-                "additionalProperties": {
-                  "type": "number"
-                },
-                "type": "object"
-              }
-            ],
             "title": "Answers"
           },
           "typing_features": {
@@ -156,7 +125,6 @@
         "type": "object",
         "required": [
           "timestamp",
-          "answers",
           "typing_features",
           "task_performance"
         ],
@@ -170,32 +138,36 @@
           },
           "reaction_attempted": {
             "type": "boolean",
-            "title": "Reaction Attempted",
-            "default": false
+            "title": "Reaction Attempted"
           }
         },
         "type": "object",
+        "required": [
+          "reaction_attempted"
+        ],
         "title": "TaskPerfModel"
       },
       "TypingModel": {
         "properties": {
           "average_latency_ms": {
             "type": "number",
-            "title": "Average Latency Ms",
-            "default": 0.0
+            "title": "Average Latency Ms"
           },
           "total_duration_ms": {
             "type": "number",
-            "title": "Total Duration Ms",
-            "default": 0.0
+            "title": "Total Duration Ms"
           },
           "backspace_rate": {
             "type": "number",
-            "title": "Backspace Rate",
-            "default": 0.0
+            "title": "Backspace Rate"
           }
         },
         "type": "object",
+        "required": [
+          "average_latency_ms",
+          "total_duration_ms",
+          "backspace_rate"
+        ],
         "title": "TypingModel"
       },
       "ValidationError": {
