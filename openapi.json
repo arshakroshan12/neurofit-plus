@@ -55,9 +55,9 @@
     },
     "/predict_fatigue": {
       "post": {
-        "summary": "Predict",
-        "description": "Locked, production-safe prediction logic with logging.\n\n- Uses regressor predict() only\n- Normalizes fatigue_score to [0,1]\n- Derives risk_level strictly from fatigue_score\n- Logs every prediction safely (JSONL)",
-        "operationId": "predict_predict_fatigue_post",
+        "summary": "Predict Fatigue",
+        "description": "Production-safe prediction endpoint.\n\n- ML inference only (no training)\n- Normalized output [0,1]\n- Deterministic risk mapping\n- Heuristic fallback\n- Logs every prediction",
+        "operationId": "predict_fatigue_predict_fatigue_post",
         "requestBody": {
           "content": {
             "application/json": {
