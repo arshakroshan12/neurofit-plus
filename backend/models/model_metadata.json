@@ -1,7 +1,18 @@
 {
-  "trained_from": "predictions.log",
-  "samples": 21,
-  "mse": 0.0018913523158631883,
-  "r2": 0.7291208342968771,
-  "model_type": "GradientBoostingRegressor"
+  "feature_order": [
+    "sleep_hours",
+    "energy_level",
+    "stress_level",
+    "avg_key_latency_ms",
+    "total_duration_ms",
+    "backspace_rate",
+    "reaction_time_ms",
+    "reaction_attempted"
+  ],
+  "model_type": "GradientBoostingRegressor",
+  "n_features": 8,
+  "mse": 0.0010276395779973053,
+  "r2": 0.9468534790931643,
+  "auc_at_0.5": 0.9913125,
+  "notes": "Synthetic-data baseline. Replace with real data and retrain for production."
 }
