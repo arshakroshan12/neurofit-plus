@@ -53,6 +53,23 @@
         }
       }
     },
+    "/stats": {
+      "get": {
+        "summary": "Stats",
+        "description": "Lightweight monitoring endpoint.\nReads prediction logs and returns usage stats.",
+        "operationId": "stats_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/predict_fatigue": {
       "post": {
         "summary": "Predict Fatigue",
