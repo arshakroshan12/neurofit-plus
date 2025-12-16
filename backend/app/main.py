@@ -175,8 +175,48 @@ def model_features():
         "expected_features": len(FEATURE_ORDER),
         "model_loaded": bool(_ml_model),
     }
+@app.get("/stats")
+def stats():
+    """
+    Lightweight monitoring endpoint.
+    Reads prediction logs and returns usage stats.
+    """
+    if not PRED_LOG_FILE.exists():
+        return {
+            "total_predictions": 0,
+            "ml_used": 0,
+            "heuristic_used": 0,
+            "average_fatigue": None,
+            "last_prediction_at": None,
+        }
 
+    total = ml = heuristic = 0
+    fatigue_sum = 0.0
+    last_ts = None
 
+    with open(PRED_LOG_FILE, "r") as f:
+        for line in f:
+            try:
+                row = json.loads(line)
+                total += 1
+                fatigue_sum += row.get("fatigue_score", 0.0)
+
+                if row.get("model_used") == "ml_model":
+                    ml += 1
+                else:
+                    heuristic += 1
+
+                last_ts = row.get("ts")
+            except Exception:
+                continue
+
+    return {
+        "total_predictions": total,
+        "ml_used": ml,
+        "heuristic_used": heuristic,
+        "average_fatigue": round(fatigue_sum / total, 3) if total else None,
+        "last_prediction_at": last_ts,
+    }
 # ============================================================
 # Request schemas
 # ============================================================
