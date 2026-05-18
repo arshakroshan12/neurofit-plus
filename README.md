@@ -32,6 +32,12 @@ NeuroFit+ is a fatigue-prediction backend (FastAPI) using a RandomForest classif
 
 - Clean repository (model binaries ignored, manifest tracked)
 
+- **Next.js 16 Frontend** with React 19 for interactive fatigue analysis and adaptive workout recommendations
+
+- **Chatbot UI** with fatigue-aware workout selection and intelligent media discovery
+
+- **Pixabay API Integration** for dynamic, cached workout demo images based on exercise type and fatigue level
+
 ---
 
 ## 🧪 Quickstart (developer)
@@ -105,6 +111,27 @@ Both CI and FastAPI enforce validation.
 
 ---
 
+## 🎨 Frontend + Chatbot
+
+The frontend is a **Next.js 16 application** with:
+
+- **Analysis Page**: 4-step fatigue assessment (subjective inputs + reaction time test)
+- **Dashboard**: Displays fatigue score, risk level, and weekly trends
+- **Chatbot**: Adaptive workout recommendation engine with:
+  - Fatigue-aware exercise selection
+  - Recovery-first guidance for high-fatigue states
+  - Dynamic demo media (images) fetched from Pixabay API
+  - Intelligent caching (localStorage, 24-hour TTL)
+
+### Media System
+- **Technology**: Pixabay API (free, no auth required)
+- **Intelligence**: Deterministic query generation based on exercise type + fatigue level
+- **Performance**: Async non-blocking, cached locally, ~1-2 second first load
+- **Graceful Fallback**: Works perfectly with text-only workouts if API unavailable
+- **See**: [PIXABAY_API_SETUP.md](./PIXABAY_API_SETUP.md) for setup instructions
+
+---
+
 ## 🧪 Testing
 
 ```bash
@@ -147,6 +174,16 @@ Badge at top reflects latest build status.
 
 ---
 
+## 📚 Documentation
+
+- [PIXABAY_API_SETUP.md](./PIXABAY_API_SETUP.md) — Setup guide for workout media system
+- [PIXABAY_QUICK_REF.md](./PIXABAY_QUICK_REF.md) — Developer quick reference
+- [PIXABAY_DEPLOYMENT.md](./PIXABAY_DEPLOYMENT.md) — Deployment checklist and troubleshooting
+- [docs/architecture.md](./docs/architecture.md) — System architecture overview
+- [docs/api-examples.md](./docs/api-examples.md) — API usage examples
+
+---
+
 ## 🤝 Contributing
 
 1. Fork → branch → implement
@@ -168,6 +205,7 @@ This project is under the MIT License. See `LICENSE`.
 ## 👤 Author
 
 **Arshak Roshan**
+
 
 GitHub: [https://github.com/arshakroshan12](https://github.com/arshakroshan12)
 

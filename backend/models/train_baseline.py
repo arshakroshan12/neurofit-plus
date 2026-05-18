@@ -19,14 +19,22 @@ def safe_imports():
         import sklearn
         from sklearn.ensemble import RandomForestClassifier
         from sklearn.model_selection import train_test_split
-        from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
+        from sklearn.metrics import accuracy_score, roc_auc_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            plt = None
+
         return {
             "pd": pd, "np": np, "sklearn": sklearn,
             "RandomForestClassifier": RandomForestClassifier,
             "train_test_split": train_test_split,
             "accuracy_score": accuracy_score,
             "roc_auc_score": roc_auc_score,
-            "classification_report": classification_report
+            "classification_report": classification_report,
+            "confusion_matrix": confusion_matrix,
+            "ConfusionMatrixDisplay": ConfusionMatrixDisplay,
+            "plt": plt
         }
     except Exception as e:
         print("IMPORT ERROR:", e)
@@ -41,6 +49,9 @@ train_test_split = libs["train_test_split"]
 accuracy_score = libs["accuracy_score"]
 roc_auc_score = libs["roc_auc_score"]
 classification_report = libs["classification_report"]
+confusion_matrix = libs["confusion_matrix"]
+ConfusionMatrixDisplay = libs["ConfusionMatrixDisplay"]
+plt = libs["plt"]
 
 print("PYTHON executable:", sys.executable)
 print("PYTHON version:", sys.version.replace('\\n',' '))
@@ -80,16 +91,36 @@ def prepare_xy(df):
     if "label" not in df.columns:
         print("ERROR: 'label' column not found in CSV - rows:", len(df))
         raise ValueError("CSV must contain 'label' column")
+    
+    # Define the correct feature order (no typing test metrics)
+    FEATURE_COLS = [
+        "sleep_hours",
+        "energy_level",
+        "stress_level",
+        "reaction_time_ms",
+        "reaction_attempted"
+    ]
+    
     y = df["label"].astype(int)
-    X = df.drop(columns=["label"])
+    
+    # Ensure all required features are present
+    missing_features = [f for f in FEATURE_COLS if f not in df.columns]
+    if missing_features:
+        raise ValueError(f"Missing required features: {missing_features}")
+    
+    X = df[FEATURE_COLS]
+    
+    # Convert to numeric if needed
     for c in X.columns:
         if X[c].dtype == object:
             try:
                 X[c] = pd.to_numeric(X[c])
             except Exception:
                 X[c] = X[c].apply(lambda v: hash(str(v)) % 1000)
+    
     print("Prepared X shape:", X.shape, "y shape:", y.shape)
-    return X.values, y.values, list(X.columns)
+    print("Features:", FEATURE_COLS)
+    return X.values, y.values, FEATURE_COLS
 
 def main():
     try:
@@ -117,6 +148,36 @@ def main():
             if y_prob is not None and len(np.unique(y_val)) > 1:
                 print("Validation AUC:", roc_auc_score(y_val, y_prob))
             print("Classification report:\n", classification_report(y_val, y_pred))
+            print("Confusion matrix:\n", confusion_matrix(y_val, y_pred))
+            
+            if plt is not None:
+                # Confusion Matrix
+                cm_path = os.path.join(MODEL_DIR, "confusion_matrix.png")
+                print("Saving confusion matrix image to:", cm_path)
+                cm = confusion_matrix(y_val, y_pred)
+                disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=np.unique(y_val))
+                disp.plot(cmap="Blues")
+                plt.title("Confusion Matrix")
+                plt.savefig(cm_path)
+                plt.close()
+                
+                # Feature Importance Image
+                if hasattr(clf, "feature_importances_"):
+                    fi_path = os.path.join(MODEL_DIR, "feature_importance.png")
+                    print("Saving feature importance image to:", fi_path)
+                    importances = clf.feature_importances_
+                    indices = np.argsort(importances)[::-1]
+                    
+                    plt.figure(figsize=(10, 6))
+                    plt.title("Feature Importances")
+                    plt.bar(range(X_train.shape[1]), importances[indices], align="center")
+                    plt.xticks(range(X_train.shape[1]), [feature_names[i] for i in indices], rotation=45, ha='right')
+                    plt.xlim([-1, X_train.shape[1]])
+                    plt.tight_layout()
+                    plt.savefig(fi_path)
+                    plt.close()
+            else:
+                print("matplotlib not installed; skipping image generation.")
         else:
             print("No validation set (too few rows).")
 

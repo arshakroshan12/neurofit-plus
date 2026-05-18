@@ -9,6 +9,9 @@ env/
 venv/
 pip-log.txt
 pip-delete-this-directory.txt
+.env
+.env.local
+*.env
 
 # IDEs
 .vscode/
@@ -34,3 +37,4 @@ backend/models/*.model
 # Logs
 *.log
 backend/models/*.joblib # if not already ignored
+!backend/models/ml_model.joblib

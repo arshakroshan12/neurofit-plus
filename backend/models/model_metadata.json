@@ -1,5 +1,9 @@
 {
-  "feature_order": [
+  "version": "v2-from-logs",
+  "trained_on": 21,
+  "trained_at": "2025-12-16T04:49:03.523424",
+  "model_type": "GradientBoostingRegressor",
+  "features": [
     "sleep_hours",
     "energy_level",
     "stress_level",
@@ -8,11 +12,5 @@
     "backspace_rate",
     "reaction_time_ms",
     "reaction_attempted"
-  ],
-  "model_type": "GradientBoostingRegressor",
-  "n_features": 8,
-  "mse": 0.0010276395779973053,
-  "r2": 0.9468534790931643,
-  "auc_at_0.5": 0.9913125,
-  "notes": "Synthetic-data baseline. Replace with real data and retrain for production."
+  ]
 }

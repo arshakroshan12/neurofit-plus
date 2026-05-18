@@ -1,104 +1,86 @@
-"""
-Retrain fatigue model from prediction logs.
-
-Reads:
-  backend/data/predictions.log (JSONL)
-
-Writes:
-  backend/models/ml_model.joblib
-  backend/models/model_metadata.json
-"""
-
 import json
 from pathlib import Path
+from datetime import datetime
+
 import numpy as np
 import joblib
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score
 
+# ---------- CONFIG ----------
 LOG_FILE = Path("backend/data/predictions.log")
 MODEL_DIR = Path("backend/models")
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-FEATURE_ORDER = [
-    "sleep_hours",
-    "energy_level",
-    "stress_level",
-    "avg_key_latency_ms",
-    "total_duration_ms",
-    "backspace_rate",
-    "reaction_time_ms",
-    "reaction_attempted",
-]
+MODEL_PATH = MODEL_DIR / "ml_model.joblib"
+META_PATH = MODEL_DIR / "model_metadata.json"
 
-def load_dataset():
-    if not LOG_FILE.exists():
-        raise RuntimeError("No prediction log found. Cannot retrain.")
+MIN_SAMPLES = 20   # minimum logs needed to retrain
+# ----------------------------
 
+
+def load_logs():
     X, y = [], []
+
+    if not LOG_FILE.exists():
+        raise FileNotFoundError("predictions.log not found")
 
     with open(LOG_FILE, "r") as f:
         for line in f:
             try:
                 row = json.loads(line)
-                features = row.get("features")
-                score = row.get("fatigue_score")
-
-                if features is None or score is None:
-                    continue
-
-                if len(features) != len(FEATURE_ORDER):
-                    continue
-
-                X.append(features)
-                y.append(score)
+                X.append(row["features"])
+                y.append(row["fatigue_score"])
             except Exception:
                 continue
 
-    if len(X) < 20:
-        raise RuntimeError("Not enough data to retrain (need at least ~20 samples)")
-
     return np.array(X, dtype=float), np.array(y, dtype=float)
 
-def main():
-    print("Loading dataset from logs...")
-    X, y = load_dataset()
-    print(f"Loaded {len(X)} samples")
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+def retrain():
+    X, y = load_logs()
+
+    if len(X) < MIN_SAMPLES:
+        raise ValueError(
+            f"Not enough samples to retrain (found {len(X)}, need {MIN_SAMPLES})"
+        )
+
+    print(f"🔁 Retraining model on {len(X)} samples")
 
     model = GradientBoostingRegressor(
         n_estimators=150,
-        learning_rate=0.08,
-        max_depth=4,
-        random_state=42
+        learning_rate=0.05,
+        max_depth=3,
+        random_state=42,
     )
 
-    print("Training model...")
-    model.fit(X_train, y_train)
+    model.fit(X, y)
 
-    preds = model.predict(X_test)
-    mse = mean_squared_error(y_test, preds)
-    r2 = r2_score(y_test, preds)
-
-    joblib.dump(model, MODEL_DIR / "ml_model.joblib")
+    joblib.dump(model, MODEL_PATH)
 
     metadata = {
-        "trained_from": "predictions.log",
-        "samples": int(len(X)),
-        "mse": mse,
-        "r2": r2,
-        "model_type": "GradientBoostingRegressor"
+        "version": "v2-from-logs",
+        "trained_on": len(X),
+        "trained_at": datetime.utcnow().isoformat(),
+        "model_type": "GradientBoostingRegressor",
+        "features": [
+            "sleep_hours",
+            "energy_level",
+            "stress_level",
+            "avg_key_latency_ms",
+            "total_duration_ms",
+            "backspace_rate",
+            "reaction_time_ms",
+            "reaction_attempted",
+        ],
     }
 
-    with open(MODEL_DIR / "model_metadata.json", "w") as f:
+    with open(META_PATH, "w") as f:
         json.dump(metadata, f, indent=2)
 
     print("✅ Retraining complete")
-    print(json.dumps(metadata, indent=2))
+    print(f"📦 Model saved to: {MODEL_PATH}")
+    print(f"📝 Metadata saved to: {META_PATH}")
+
 
 if __name__ == "__main__":
-    main()
+    retrain()
