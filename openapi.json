@@ -5,22 +5,6 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/": {
-      "get": {
-        "summary": "Root",
-        "operationId": "root__get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -37,43 +21,9 @@
         }
       }
     },
-    "/model/features": {
-      "get": {
-        "summary": "Model Features",
-        "operationId": "model_features_model_features_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/stats": {
-      "get": {
-        "summary": "Stats",
-        "description": "Lightweight monitoring endpoint.\nReads prediction logs and returns usage stats.",
-        "operationId": "stats_stats_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
     "/predict_fatigue": {
       "post": {
         "summary": "Predict Fatigue",
-        "description": "Production-safe prediction endpoint.\n\n- ML inference only (no training)\n- Normalized output [0,1]\n- Deterministic risk mapping\n- Heuristic fallback\n- Logs every prediction",
         "operationId": "predict_fatigue_predict_fatigue_post",
         "requestBody": {
           "content": {
@@ -142,6 +92,7 @@
         "type": "object",
         "required": [
           "timestamp",
+          "answers",
           "typing_features",
           "task_performance"
         ],
@@ -150,17 +101,25 @@
       "TaskPerfModel": {
         "properties": {
           "reaction_time_ms": {
-            "type": "number",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Reaction Time Ms"
           },
-          "reaction_attempted": {
-            "type": "boolean",
-            "title": "Reaction Attempted"
+          "reaction_lapses": {
+            "type": "integer",
+            "title": "Reaction Lapses",
+            "default": 0
           }
         },
         "type": "object",
         "required": [
-          "reaction_attempted"
+          "reaction_time_ms"
         ],
         "title": "TaskPerfModel"
       },
